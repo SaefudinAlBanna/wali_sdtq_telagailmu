@@ -11,8 +11,16 @@ import '../pages/home.dart';
 import '../pages/marketplace.dart';
 import '../pages/profile.dart';
 
+import 'dart:io'; // <-- Tambahkan import
+import 'package:image_picker/image_picker.dart'; // <-- Tambahkan import
+import 'storage_controller.dart'; // <-- Tambahkan import
+import 'package:image_cropper/image_cropper.dart'; 
+
 
 class HomeController extends GetxController {
+
+  final StorageController storageC = Get.find(); // <-- Dapatkan instance StorageController
+
   RxInt indexWidget = 0.obs;
   RxBool isLoading = false.obs;
   RxBool isLoadingInitialData = true.obs; // Untuk loading tahun ajaran & kelas
@@ -68,6 +76,110 @@ class HomeController extends GetxController {
       }
     });
   }
+
+  // FUNGSI BARU UNTUK MEMILIH DAN MENGUPLOAD FOTO
+  Future<void> pickAndUploadProfilePicture() async {
+    final ImagePicker picker = ImagePicker();
+    // Pilih gambar dari galeri
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      // --- LANGKAH CROPPING DIMULAI DI SINI ---
+      final CroppedFile? croppedFile = await ImageCropper().cropImage(
+        sourcePath: image.path,
+        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1), // Set square aspect ratio
+        uiSettings: [
+          AndroidUiSettings(
+              toolbarTitle: 'Potong Gambar',
+              toolbarColor: Colors.indigo[400], // Sesuaikan dengan tema Anda
+              toolbarWidgetColor: Colors.white,
+              lockAspectRatio: true), // Kunci rasio menjadi persegi
+          IOSUiSettings(
+            title: 'Potong Gambar',
+            aspectRatioLockEnabled: true,
+            resetAspectRatioEnabled: false,
+            aspectRatioPickerButtonHidden: true,
+          ),
+        ],
+      );
+      // --- LANGKAH CROPPING SELESAI ---
+
+      // Lanjutkan hanya jika pengguna selesai cropping (tidak menekan cancel)
+      if (croppedFile != null) {
+        Get.dialog(
+          const Center(child: CircularProgressIndicator()),
+          barrierDismissible: false,
+        );
+
+        try {
+          // Gunakan file yang sudah di-crop, bukan file asli
+          final File imageFile = File(croppedFile.path); 
+          final String uid = auth.currentUser!.uid;
+
+          // 1. Upload ke Supabase Storage
+          final String? imageUrl = await storageC.uploadProfilePicture(imageFile, uid);
+
+          if (imageUrl != null) {
+            // 2. Dapatkan docIdSiswa untuk update Firestore
+            final String siswaDocId = await idSiswa();
+            
+            // 3. Simpan URL dari Supabase ke dokumen user di Firestore
+            await firestore
+                .collection('Sekolah')
+                .doc(idSekolah)
+                .collection('siswa')
+                .doc(siswaDocId)
+                .update({'profileImageUrl': imageUrl});
+            
+            Get.back(); // Tutup dialog loading
+            Get.snackbar('Sukses', 'Foto profil berhasil diperbarui!');
+          } else {
+             Get.back();
+          }
+        } catch (e) {
+          Get.back();
+          Get.snackbar('Error', 'Terjadi kesalahan: ${e.toString()}');
+        }
+      }
+    }
+  }
+      // Tampilkan dialog loading
+  //     Get.dialog(
+  //       const Center(child: CircularProgressIndicator()),
+  //       barrierDismissible: false,
+  //     );
+
+  //     try {
+  //       final File imageFile = File(image.path);
+  //       final String uid = auth.currentUser!.uid;
+
+  //       // 1. Upload ke Supabase Storage
+  //       final String? imageUrl = await storageC.uploadProfilePicture(imageFile, uid);
+
+  //       if (imageUrl != null) {
+  //         // 2. Dapatkan docIdSiswa untuk update Firestore
+  //         final String siswaDocId = await idSiswa();
+          
+  //         // 3. Simpan URL dari Supabase ke dokumen user di Firestore
+  //         await firestore
+  //             .collection('Sekolah')
+  //             .doc(idSekolah)
+  //             .collection('siswa')
+  //             .doc(siswaDocId)
+  //             .update({'profileImageUrl': imageUrl}); // <-- Simpan di field baru
+          
+  //         Get.back(); // Tutup dialog loading
+  //         Get.snackbar('Sukses', 'Foto profil berhasil diperbarui!');
+  //       } else {
+  //          Get.back(); // Tutup dialog loading jika gagal
+  //       }
+
+  //     } catch (e) {
+  //       Get.back(); // Tutup dialog loading
+  //       Get.snackbar('Error', 'Terjadi kesalahan: ${e.toString()}');
+  //     }
+  //   }
+  // }
 
   Future<String> getTahunAjaranTerakhir() async {
     CollectionReference<Map<String, dynamic>> colTahunAjaran = firestore

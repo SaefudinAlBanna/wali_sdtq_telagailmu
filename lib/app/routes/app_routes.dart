@@ -18,6 +18,8 @@ abstract class Routes {
   static const DAFTAR_SPP = _Paths.DAFTAR_SPP;
   static const DAFTAR_PEMBAYARAN_KOMITE = _Paths.DAFTAR_PEMBAYARAN_KOMITE;
   static const JADWAL_AGIS = _Paths.JADWAL_AGIS;
+  static const INPUT_JADWAL_AGIS = _Paths.INPUT_JADWAL_AGIS;
+  static const INPUT_DANA_KOMITE = _Paths.INPUT_DANA_KOMITE;
 }
 
 abstract class _Paths {
@@ -37,4 +39,6 @@ abstract class _Paths {
   static const DAFTAR_SPP = '/daftar-spp';
   static const DAFTAR_PEMBAYARAN_KOMITE = '/daftar-pembayaran-komite';
   static const JADWAL_AGIS = '/jadwal-agis';
+  static const INPUT_JADWAL_AGIS = '/input-jadwal-agis';
+  static const INPUT_DANA_KOMITE = '/input-dana-komite';
 }

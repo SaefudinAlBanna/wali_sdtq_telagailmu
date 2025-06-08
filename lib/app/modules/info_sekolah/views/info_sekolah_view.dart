@@ -5,9 +5,13 @@ import 'package:get/get.dart';
 import '../controllers/info_sekolah_controller.dart';
 
 class InfoSekolahView extends GetView<InfoSekolahController> {
-  const InfoSekolahView({super.key});
+   InfoSekolahView({super.key});
+
+   final dataArgumen = Get.arguments;
+
   @override
   Widget build(BuildContext context) {
+    print("dataArgumen = ${dataArgumen[0]['namakelas']}");
     return Scaffold(
       appBar: AppBar(
         title: const Text('Info Komite'),

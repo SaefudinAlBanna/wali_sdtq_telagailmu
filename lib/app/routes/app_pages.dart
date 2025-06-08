@@ -20,6 +20,10 @@ import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
 import '../modules/info_sekolah/bindings/info_sekolah_binding.dart';
 import '../modules/info_sekolah/views/info_sekolah_view.dart';
+import '../modules/input_dana_komite/bindings/input_dana_komite_binding.dart';
+import '../modules/input_dana_komite/views/input_dana_komite_view.dart';
+import '../modules/input_jadwal_agis/bindings/input_jadwal_agis_binding.dart';
+import '../modules/input_jadwal_agis/views/input_jadwal_agis_view.dart';
 import '../modules/jadwal_agis/bindings/jadwal_agis_binding.dart';
 import '../modules/jadwal_agis/views/jadwal_agis_view.dart';
 import '../modules/jadwal_pelajaran/bindings/jadwal_pelajaran_binding.dart';
@@ -61,27 +65,27 @@ class AppPages {
     ),
     GetPage(
       name: _Paths.JADWAL_PELAJARAN,
-      page: () => const JadwalPelajaranView(),
+      page: () => JadwalPelajaranView(),
       binding: JadwalPelajaranBinding(),
     ),
     GetPage(
       name: _Paths.DAFTAR_MATA_PELAJARAN,
-      page: () => const DaftarMataPelajaranView(),
+      page: () => DaftarMataPelajaranView(),
       binding: DaftarMataPelajaranBinding(),
     ),
     GetPage(
       name: _Paths.DAFTAR_EKSKUL,
-      page: () => const DaftarEkskulView(),
+      page: () => DaftarEkskulView(),
       binding: DaftarEkskulBinding(),
     ),
     GetPage(
       name: _Paths.INFO_SEKOLAH,
-      page: () => const InfoSekolahView(),
+      page: () => InfoSekolahView(),
       binding: InfoSekolahBinding(),
     ),
     GetPage(
       name: _Paths.DAFTAR_NILAI_HALAQOH,
-      page: () => const DaftarNilaiHalaqohView(),
+      page: () => DaftarNilaiHalaqohView(),
       binding: DaftarNilaiHalaqohBinding(),
     ),
     GetPage(
@@ -91,7 +95,7 @@ class AppPages {
     ),
     GetPage(
       name: _Paths.TAMPILKAN_INFO_SEKOLAH,
-      page: () => const TampilkanInfoSekolahView(),
+      page: () => TampilkanInfoSekolahView(),
       binding: TampilkanInfoSekolahBinding(),
     ),
     GetPage(
@@ -101,18 +105,28 @@ class AppPages {
     ),
     GetPage(
       name: _Paths.DAFTAR_SPP,
-      page: () => const DaftarSppView(),
+      page: () => DaftarSppView(),
       binding: DaftarSppBinding(),
     ),
     GetPage(
       name: _Paths.DAFTAR_PEMBAYARAN_KOMITE,
-      page: () => const DaftarPembayaranKomiteView(),
+      page: () => DaftarPembayaranKomiteView(),
       binding: DaftarPembayaranKomiteBinding(),
     ),
     GetPage(
       name: _Paths.JADWAL_AGIS,
       page: () => JadwalAgisView(),
       binding: JadwalAgisBinding(),
+    ),
+    GetPage(
+      name: _Paths.INPUT_JADWAL_AGIS,
+      page: () => const InputJadwalAgisView(),
+      binding: InputJadwalAgisBinding(),
+    ),
+    GetPage(
+      name: _Paths.INPUT_DANA_KOMITE,
+      page: () => const InputDanaKomiteView(),
+      binding: InputDanaKomiteBinding(),
     ),
   ];
 }

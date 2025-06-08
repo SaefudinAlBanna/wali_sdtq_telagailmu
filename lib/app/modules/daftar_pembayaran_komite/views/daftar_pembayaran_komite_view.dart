@@ -6,9 +6,13 @@ import '../controllers/daftar_pembayaran_komite_controller.dart';
 
 class DaftarPembayaranKomiteView
     extends GetView<DaftarPembayaranKomiteController> {
-  const DaftarPembayaranKomiteView({super.key});
+   DaftarPembayaranKomiteView({super.key});
+
+   final dataArgumen = Get.arguments;
+   
   @override
   Widget build(BuildContext context) {
+    print("dataArgumen = ${dataArgumen[0]['namakelas']}");
     return Scaffold(
       appBar: AppBar(
         title: const Text('DaftarPembayaranKomiteView'),

@@ -102,6 +102,22 @@ class HomePage extends GetView<HomeController> {
         }
         if (snapshot.hasData) {
           Map<String, dynamic> data = snapshot.data!.data()!;
+
+          // LANGSUNG CEK FIELD DARI FIRESTORE
+          final String? imageUrlFromDb = data['profileImageUrl'];
+
+          final ImageProvider imageProvider;
+          // Cek apakah URL dari DB valid (tidak null dan tidak kosong)
+          if (imageUrlFromDb != null && imageUrlFromDb.isNotEmpty) {
+            imageProvider = NetworkImage(imageUrlFromDb);
+          } else {
+            // Jika tidak, gunakan aset lokal
+            // imageProvider = const AssetImage('assets/png/logo.png');
+            imageProvider = NetworkImage(
+              "https://ui-avatars.com/api/?name=${data['nama']}",
+            );
+          }
+
           return Scaffold(
             body: ListView(
               children: [
@@ -132,6 +148,7 @@ class HomePage extends GetView<HomeController> {
                                 padding: EdgeInsets.symmetric(horizontal: 15),
                                 margin: EdgeInsets.symmetric(horizontal: 25),
                                 height: 145,
+                                // width: double.infinity,
                                 decoration: BoxDecoration(
                                   boxShadow: [
                                     BoxShadow(
@@ -179,14 +196,17 @@ class HomePage extends GetView<HomeController> {
                                               Container(
                                                 height: 50,
                                                 width: 50,
+                                                // width: double.infinity,
                                                 decoration: BoxDecoration(
                                                   color: Colors.grey[100],
                                                   borderRadius:
                                                       BorderRadius.circular(50),
                                                   image: DecorationImage(
-                                                    image: NetworkImage(
-                                                      "https://ui-avatars.com/api/?name=${data['nama']}",
-                                                    ),
+                                                    // image: NetworkImage(
+                                                    //   "https://ui-avatars.com/api/?name=${data['nama']}",
+                                                    // ),
+                                                    image: imageProvider,
+                                                    fit: BoxFit.cover,
                                                   ),
                                                 ),
                                               ),
@@ -200,8 +220,13 @@ class HomePage extends GetView<HomeController> {
                                                 ),
                                               ),
                                               SizedBox(height: 5),
-                                              FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                                                future: controller.getDataKelas(),
+                                              FutureBuilder<
+                                                QuerySnapshot<
+                                                  Map<String, dynamic>
+                                                >
+                                              >(
+                                                future:
+                                                    controller.getDataKelas(),
                                                 // future: null,
                                                 builder: (
                                                   context,
@@ -215,7 +240,8 @@ class HomePage extends GetView<HomeController> {
                                                           CircularProgressIndicator(),
                                                     );
                                                   }
-                                                  if (snapshotDataKelas.data == null) {
+                                                  if (snapshotDataKelas.data ==
+                                                      null) {
                                                     return Center(
                                                       child: Text(
                                                         "kelas Belum di input",
@@ -224,10 +250,19 @@ class HomePage extends GetView<HomeController> {
                                                   }
                                                   if (snapshotDataKelas
                                                       .hasData) {
-                                                    var kelasDocs = snapshotDataKelas.data!;
-                                                    String namaKelas = kelasDocs.docs.isNotEmpty
-                                                        ? (kelasDocs.docs.first.data()['namakelas'] ?? 'N/A').toString()
-                                                        : 'N/A';
+                                                    var kelasDocs =
+                                                        snapshotDataKelas.data!;
+                                                    String namaKelas =
+                                                        kelasDocs
+                                                                .docs
+                                                                .isNotEmpty
+                                                            ? (kelasDocs
+                                                                        .docs
+                                                                        .first
+                                                                        .data()['namakelas'] ??
+                                                                    'N/A')
+                                                                .toString()
+                                                            : 'N/A';
                                                     return Text(
                                                       namaKelas,
                                                       style: TextStyle(
@@ -259,8 +294,9 @@ class HomePage extends GetView<HomeController> {
                               Container(
                                 padding: EdgeInsets.symmetric(horizontal: 15),
                                 margin: EdgeInsets.symmetric(horizontal: 25),
-                                height: 120,
-                                width: Get.width,
+                                height: 130,
+                                // width: Get.width,
+                                width: double.infinity,
                                 decoration: BoxDecoration(
                                   boxShadow: [
                                     BoxShadow(
@@ -283,8 +319,7 @@ class HomePage extends GetView<HomeController> {
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceEvenly,
                                     children: [
-
-                                       // AGIS
+                                      // AGIS
                                       MenuAtas(
                                         title: 'AGIS',
                                         // icon: Icon(Icons.view_timeline_outlined),
@@ -298,18 +333,37 @@ class HomePage extends GetView<HomeController> {
                                             Get.toNamed(
                                               Routes.JADWAL_AGIS,
                                               arguments: dataSiswa,
-                                           );
+                                            );
                                           });
                                         },
                                       ),
-                                  
+
+                                      // AGIS
+                                      MenuAtas(
+                                        title: 'Input AGIS',
+                                        // icon: Icon(Icons.view_timeline_outlined),
+                                        gambar: "assets/png/layar_list.png",
+                                        onTap: () async {
+                                          final dataSiswaFuture =
+                                              controller.getDataKelas();
+                                          dataSiswaFuture.then((snapshot) {
+                                            final dataSiswa = snapshot.docs;
+                                            // print('Data yang dikirim: $dataSiswa');
+                                            Get.toNamed(
+                                              Routes.INPUT_JADWAL_AGIS,
+                                              arguments: dataSiswa,
+                                            );
+                                          });
+                                        },
+                                      ),
+
                                       // JADWAL PELAJARAN
                                       MenuAtas(
                                         title: 'Jadwal Pelajaran',
                                         // icon: Icon(Icons.view_timeline_outlined),
                                         gambar: "assets/png/daftar_list.png",
                                         onTap: () async {
-                                           final dataSiswaFuture =
+                                          final dataSiswaFuture =
                                               controller.getDataKelas();
                                           dataSiswaFuture.then((snapshot) {
                                             final dataSiswa = snapshot.docs;
@@ -322,14 +376,13 @@ class HomePage extends GetView<HomeController> {
                                         },
                                       ),
 
-                                      
                                       // MATA PELAJARAN
                                       MenuAtas(
                                         title: 'Mata Pelajaran',
                                         // icon: Icon(Icons.menu_book_sharp),
                                         gambar: "assets/png/papan_list.png",
                                         onTap: () async {
-                                           final dataSiswaFuture =
+                                          final dataSiswaFuture =
                                               controller.getDataKelas();
                                           dataSiswaFuture.then((snapshot) {
                                             final dataSiswa = snapshot.docs;
@@ -341,14 +394,14 @@ class HomePage extends GetView<HomeController> {
                                           });
                                         },
                                       ),
-                                  
-                                      // HALAQOH 
+
+                                      // HALAQOH
                                       MenuAtas(
                                         title: 'Halaqoh',
                                         // icon: Icon(Icons.sports_gymnastics_rounded),
                                         gambar: "assets/png/jurnal_ajar.png",
                                         onTap: () async {
-                                         final dataSiswaFuture =
+                                          final dataSiswaFuture =
                                               controller.getDataKelas();
                                           dataSiswaFuture.then((snapshot) {
                                             final dataSiswa = snapshot.docs;
@@ -356,18 +409,18 @@ class HomePage extends GetView<HomeController> {
                                             Get.toNamed(
                                               Routes.DAFTAR_NILAI_HALAQOH,
                                               arguments: dataSiswa,
-                                           );
+                                            );
                                           });
                                         },
                                       ),
-                                     
+
                                       //EKSKUL
                                       MenuAtas(
                                         title: 'Ekskul',
                                         // icon: Icon(Icons.sports_gymnastics_rounded),
                                         gambar: "assets/png/toga_lcd.png",
                                         onTap: () async {
-                                         final dataSiswaFuture =
+                                          final dataSiswaFuture =
                                               controller.getDataKelas();
                                           dataSiswaFuture.then((snapshot) {
                                             final dataSiswa = snapshot.docs;
@@ -375,12 +428,12 @@ class HomePage extends GetView<HomeController> {
                                             Get.toNamed(
                                               Routes.DAFTAR_EKSKUL,
                                               arguments: dataSiswa,
-                                           );
+                                            );
                                           });
                                         },
                                       ),
-                                      
-                                       //  SPP
+
+                                      //  SPP
                                       MenuAtas(
                                         title: 'Spp',
                                         // icon: Icon(Icons.info_outline_rounded),
@@ -394,18 +447,37 @@ class HomePage extends GetView<HomeController> {
                                             Get.toNamed(
                                               Routes.DAFTAR_SPP,
                                               arguments: dataSiswa,
-                                           );
+                                            );
                                           });
                                         },
                                       ),
-                                      
+
+                                      // INPUT DANA KOMITE
+                                      MenuAtas(
+                                        title: 'Input Dana Komite',
+                                        // icon: Icon(Icons.info_outline_rounded),
+                                        gambar: "assets/png/layar.png",
+                                        onTap: () async {
+                                          final dataSiswaFuture =
+                                              controller.getDataKelas();
+                                          dataSiswaFuture.then((snapshot) {
+                                            final dataSiswa = snapshot.docs;
+                                            // print('Data yang dikirim: $dataSiswa');
+                                            Get.toNamed(
+                                              Routes.INPUT_DANA_KOMITE,
+                                              arguments: dataSiswa,
+                                            );
+                                          });
+                                        },
+                                      ),
+
                                       //  KOMITE
                                       MenuAtas(
                                         title: 'Komite',
                                         // icon: Icon(Icons.info_outline_rounded),
                                         gambar: "assets/png/uang.png",
                                         onTap: () async {
-                                         final dataSiswaFuture =
+                                          final dataSiswaFuture =
                                               controller.getDataKelas();
                                           dataSiswaFuture.then((snapshot) {
                                             final dataSiswa = snapshot.docs;
@@ -413,27 +485,34 @@ class HomePage extends GetView<HomeController> {
                                             Get.toNamed(
                                               Routes.DAFTAR_PEMBAYARAN_KOMITE,
                                               arguments: dataSiswa,
-                                           );
+                                            );
                                           });
                                         },
                                       ),
-                                    
-                                       // INFO KOMITE
+
+                                      // INFO KOMITE
                                       MenuAtas(
                                         title: 'Info Komite',
                                         // icon: Icon(Icons.info_outline_rounded),
                                         gambar: "assets/png/pengumuman.png",
-                                        onTap: () {
-                                          Get.toNamed(Routes.INFO_SEKOLAH);
+                                        onTap: () async {
+                                          final dataSiswaFuture =
+                                              controller.getDataKelas();
+                                          dataSiswaFuture.then((snapshot) {
+                                            final dataSiswa = snapshot.docs;
+                                            // print('Data yang dikirim: $dataSiswa');
+                                            Get.toNamed(
+                                              Routes.INFO_SEKOLAH,
+                                              arguments: dataSiswa,
+                                            );
+                                          });
                                         },
                                       ),
-                                    
                                     ],
                                   ),
                                 ),
                               ),
                               SizedBox(height: 25),
-
 
                               // --- AWAL BAGIAN JURNAL CAROUSEL AI ---
                               // Padding(
@@ -809,8 +888,6 @@ class HomePage extends GetView<HomeController> {
                               //     ],
                               //   ),
                               // ),
-
-
                             ],
                           ),
                         ],
@@ -819,206 +896,206 @@ class HomePage extends GetView<HomeController> {
                   ],
                 ),
 
-
                 // JUDUL INFORMASI SEKOLAH (BAWAH)
                 Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "Informasi Sekolah",
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                          ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Informasi Sekolah",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
                         ),
+                      ),
 
-                        TextButton(
-                          onPressed: () {
-                            Get.snackbar(
-                              "Info",
-                              "Nanti akan muncul page berita lengkap",
-                            );
-                          },
-                          child: Text("Selengkapnya"),
-                        ),
-                      ],
-                    ),
+                      TextButton(
+                        onPressed: () {
+                          Get.snackbar(
+                            "Info",
+                            "Nanti akan muncul page berita lengkap",
+                          );
+                        },
+                        child: Text("Selengkapnya"),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 7),
+                ),
+                SizedBox(height: 7),
 
-                  // INFORMASI SEKOLAH (BAWAH)
-                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: controller.getDataInfo(),
-                    builder: (context, snapInfo) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(child: CircularProgressIndicator());
-                      } else if (snapshot.data == null ||
-                          (snapshot.data != null &&
-                              (snapshot.data!.data() == null ||
-                                  (snapshot.data!.data() as Map).isEmpty))) {
-                        return Center(child: Text('Belum ada informasi'));
-                      } else if (snapInfo.hasData) {
-                        return ListView.builder(
-                          shrinkWrap: true,
-                          physics: NeverScrollableScrollPhysics(),
-                          itemCount: snapInfo.data!.docs.length,
-                          itemBuilder: (context, index) {
-                            var dataInfo = snapInfo.data!.docs[index].data();
-                            var tanggalInputString =
-                                dataInfo['tanggalinput'] as String?;
-                            String formattedDate = "Tanggal tidak valid";
+                // INFORMASI SEKOLAH (BAWAH)
+                StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: controller.getDataInfo(),
+                  builder: (context, snapInfo) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    } else if (snapshot.data == null ||
+                        (snapshot.data != null &&
+                            (snapshot.data!.data() == null ||
+                                (snapshot.data!.data() as Map).isEmpty))) {
+                      return Center(child: Text('Belum ada informasi'));
+                    } else if (snapInfo.hasData) {
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: snapInfo.data!.docs.length,
+                        itemBuilder: (context, index) {
+                          var dataInfo = snapInfo.data!.docs[index].data();
+                          var tanggalInputString =
+                              dataInfo['tanggalinput'] as String?;
+                          String formattedDate = "Tanggal tidak valid";
 
-                            if (tanggalInputString != null &&
-                                tanggalInputString.isNotEmpty) {
-                              try {
-                                // 1. Parse string dari Firestore ke DateTime object
-                                DateTime dateTime = DateTime.parse(
-                                  tanggalInputString,
-                                );
+                          if (tanggalInputString != null &&
+                              tanggalInputString.isNotEmpty) {
+                            try {
+                              // 1. Parse string dari Firestore ke DateTime object
+                              DateTime dateTime = DateTime.parse(
+                                tanggalInputString,
+                              );
 
-                                // 2. Format DateTime object ke string yang diinginkan
-                                // 'dd' untuk hari, 'MMMM' untuk nama bulan lengkap, 'yyyy' untuk tahun
-                                // 'HH' untuk jam (00-23), 'mm' untuk menit
-                                // Locale 'en_US' digunakan untuk memastikan nama bulan dalam bahasa Inggris ("May")
-                                // Jika Anda ingin nama bulan dalam Bahasa Indonesia ("Mei"), gunakan 'id_ID'
-                                // dan pastikan Flutter di-setup untuk lokalisasi Indonesia.
-                                // Untuk "May" seperti permintaan, 'en_US' atau null (default locale jika English) sudah cukup.
+                              // 2. Format DateTime object ke string yang diinginkan
+                              // 'dd' untuk hari, 'MMMM' untuk nama bulan lengkap, 'yyyy' untuk tahun
+                              // 'HH' untuk jam (00-23), 'mm' untuk menit
+                              // Locale 'en_US' digunakan untuk memastikan nama bulan dalam bahasa Inggris ("May")
+                              // Jika Anda ingin nama bulan dalam Bahasa Indonesia ("Mei"), gunakan 'id_ID'
+                              // dan pastikan Flutter di-setup untuk lokalisasi Indonesia.
+                              // Untuk "May" seperti permintaan, 'en_US' atau null (default locale jika English) sudah cukup.
 
-                                // formattedDate =
-                                //     DateFormat(
-                                //       'dd MMMM yyyy - HH:mm',
-                                //       'en_US',
-                                //     ).format(dateTime) +
-                                //     " WIB";
+                              // formattedDate =
+                              //     DateFormat(
+                              //       'dd MMMM yyyy - HH:mm',
+                              //       'en_US',
+                              //     ).format(dateTime) +
+                              //     " WIB";
 
-                                formattedDate =
-                                    "${DateFormat('dd MMMM yyyy - HH:mm', 'en_US').format(dateTime)} WIB";
+                              formattedDate =
+                                  "${DateFormat('dd MMMM yyyy - HH:mm', 'en_US').format(dateTime)} WIB";
 
-                                // Alternatif jika ingin "WIB" langsung di format string (kurang fleksibel untuk i18n "WIB" itu sendiri):
-                                // formattedDate = DateFormat("dd MMMM yyyy - HH:mm 'WIB'", 'en_US').format(dateTime);
-                              } catch (e) {
-                                print(
-                                  "Error parsing date '$tanggalInputString': $e",
-                                );
-                                // Jika terjadi error parsing, tampilkan string asli atau pesan error
-                                formattedDate = tanggalInputString ?? "Format tanggal salah";
-                              }
+                              // Alternatif jika ingin "WIB" langsung di format string (kurang fleksibel untuk i18n "WIB" itu sendiri):
+                              // formattedDate = DateFormat("dd MMMM yyyy - HH:mm 'WIB'", 'en_US').format(dateTime);
+                            } catch (e) {
+                              print(
+                                "Error parsing date '$tanggalInputString': $e",
+                              );
+                              // Jika terjadi error parsing, tampilkan string asli atau pesan error
+                              formattedDate =
+                                  tanggalInputString ?? "Format tanggal salah";
                             }
+                          }
 
-                            return InkWell(
-                              onTap: () {
-                                Get.toNamed(
-                                  Routes.TAMPILKAN_INFO_SEKOLAH,
-                                  arguments: dataInfo,
-                                );
-                              },
-                              child: Container(
-                                // margin: EdgeInsets.fromLTRB(15, 0, 15, 15),
-                                margin: EdgeInsets.fromLTRB(
-                                  15,
-                                  (index == 0 ? 15 : 0),
-                                  15,
-                                  15,
-                                ),
-                                // Beri margin atas untuk item pertama
-                                padding: EdgeInsets.all(10),
-
-                                // height: 50,
-                                decoration: BoxDecoration(
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey.withValues(alpha: 0.5),
-                                      // spreadRadius: 1,
-                                      blurRadius: 3,
-                                      offset: Offset(2, 2),
-                                    ),
-                                  ],
-                                  color: Colors.grey.shade50,
-                                  // color: Colors.brown,
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      margin: EdgeInsets.all(5),
-                                      height: 75,
-                                      width: 75,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(15),
-                                        color: Colors.grey,
-                                        image: DecorationImage(
-                                          image: NetworkImage(
-                                            "https://picsum.photos/id/${index + 356}/500/500",
-                                          ),
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(width: 5),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            dataInfo['judulinformasi'],
-                                            style: TextStyle(
-                                              color: Colors.black,
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          SizedBox(height: 10),
-                                          Text(
-                                            // "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla eget placerat ipsum. Quisque sed metus elit. Phasellus viverra, magna tristique auctor volutpat, neque orci bibendum magna, vel varius augue felis quis ex.",
-                                            dataInfo['informasisekolah'],
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-
-                                          SizedBox(height: 20),
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                Icons.access_time_outlined,
-                                                size: 12,
-                                              ),
-                                              SizedBox(width: 7),
-                                              // Text(
-                                              //   dataInfo['tanggalinput'],
-                                              //   style: TextStyle(fontSize: 12),
-                                              // ),
-                                              Text(
-                                                formattedDate, // <-- GUNAKAN VARIABEL YANG SUDAH DIFORMAT
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.grey.shade700,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          SizedBox(height: 10),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                          return InkWell(
+                            onTap: () {
+                              Get.toNamed(
+                                Routes.TAMPILKAN_INFO_SEKOLAH,
+                                arguments: dataInfo,
+                              );
+                            },
+                            child: Container(
+                              // margin: EdgeInsets.fromLTRB(15, 0, 15, 15),
+                              margin: EdgeInsets.fromLTRB(
+                                15,
+                                (index == 0 ? 15 : 0),
+                                15,
+                                15,
                               ),
-                            );
-                          },
-                        );
-                      } else {
-                        // return Center(child: CircularProgressIndicator());
-                        return Center(child: Text("Ada Kesalahan."));
-                      }
-                    },
-                  ),
+                              // Beri margin atas untuk item pertama
+                              padding: EdgeInsets.all(10),
+
+                              // height: 50,
+                              decoration: BoxDecoration(
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withValues(alpha: 0.5),
+                                    // spreadRadius: 1,
+                                    blurRadius: 3,
+                                    offset: Offset(2, 2),
+                                  ),
+                                ],
+                                color: Colors.grey.shade50,
+                                // color: Colors.brown,
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    margin: EdgeInsets.all(5),
+                                    height: 75,
+                                    width: 75,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(15),
+                                      color: Colors.grey,
+                                      image: DecorationImage(
+                                        image: NetworkImage(
+                                          "https://picsum.photos/id/${index + 356}/500/500",
+                                        ),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 5),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          dataInfo['judulinformasi'],
+                                          style: TextStyle(
+                                            color: Colors.black,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        SizedBox(height: 10),
+                                        Text(
+                                          // "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla eget placerat ipsum. Quisque sed metus elit. Phasellus viverra, magna tristique auctor volutpat, neque orci bibendum magna, vel varius augue felis quis ex.",
+                                          dataInfo['informasisekolah'],
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+
+                                        SizedBox(height: 20),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.access_time_outlined,
+                                              size: 12,
+                                            ),
+                                            SizedBox(width: 7),
+                                            // Text(
+                                            //   dataInfo['tanggalinput'],
+                                            //   style: TextStyle(fontSize: 12),
+                                            // ),
+                                            Text(
+                                              formattedDate, // <-- GUNAKAN VARIABEL YANG SUDAH DIFORMAT
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey.shade700,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 10),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    } else {
+                      // return Center(child: CircularProgressIndicator());
+                      return Center(child: Text("Ada Kesalahan."));
+                    }
+                  },
+                ),
               ],
             ),
           );

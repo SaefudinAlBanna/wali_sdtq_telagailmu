@@ -5,9 +5,13 @@ import 'package:get/get.dart';
 import '../controllers/jadwal_pelajaran_controller.dart';
 
 class JadwalPelajaranView extends GetView<JadwalPelajaranController> {
-  const JadwalPelajaranView({super.key});
+   JadwalPelajaranView({super.key});
+
+   final dataArgumen = Get.arguments;
+
   @override
   Widget build(BuildContext context) {
+    print("dataArgumen = ${dataArgumen[0]['namakelas']}");
     return Scaffold(
       appBar: AppBar(
         title: const Text('JadwalPelajaranView'),

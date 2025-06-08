@@ -41,6 +41,18 @@ class ProfilePage extends GetView<HomeController> {
         } else if (snapshotprofil.hasData) {
           Map<String, dynamic> datasiswa = snapshotprofil.data!.data()!;
 
+          // LANGSUNG CEK FIELD DARI FIRESTORE
+          final String? imageUrlFromDb = datasiswa['profileImageUrl'];
+
+          final ImageProvider imageProvider;
+          // Cek apakah URL dari DB valid (tidak null dan tidak kosong)
+          if (imageUrlFromDb != null && imageUrlFromDb.isNotEmpty) {
+            imageProvider = NetworkImage(imageUrlFromDb);
+          } else {
+            // Jika tidak, gunakan aset lokal
+            imageProvider = const AssetImage('assets/png/logo.png');
+          }
+
           String tglLahir = datasiswa['tanggalLahir'];
           DateTime? tglLahirDate;
           try {
@@ -113,21 +125,59 @@ class ProfilePage extends GetView<HomeController> {
                         children: [
                           Column(
                             children: [
-                              Container(
-                                height: 100,
-                                width: 100,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[400],
-                                  image: DecorationImage(
-                                    image: NetworkImage(
-                                      "https://picsum.photos/200",
+                              // --- BAGIAN YANG DIUBAH ---
+                              Stack(
+                                children: [
+                                  Container(
+                                    height: 100,
+                                    width: 100,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[400],
+                                      // Gunakan URL dari Firestore
+                                      image: DecorationImage(
+                                        // image: NetworkImage(profileImageUrl),
+                                        image: imageProvider,
+                                        fit: BoxFit.cover,
+                                        // Tambahkan onError untuk menangani jika URL NetworkImage gagal dimuat
+                                        onError: (exception, stackTrace) {
+                                          print(
+                                            'Error loading profile image: $exception',
+                                          );
+                                          // Di sini Anda bisa mengubah state untuk menampilkan placeholder jika mau,
+                                          // tapi CircleAvatar akan menampilkan backgroundColor jika gagal.
+                                        },
+                                      ),
+                                      borderRadius: BorderRadius.circular(50),
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 3,
+                                      ),
                                     ),
-                                    // "https://photos.google.com/photo/AF1QipO0EuuqmPsza1Ljrdy6roeFI9BbjQ043BrYtxpc"),
-                                    fit: BoxFit.cover,
                                   ),
-                                  borderRadius: BorderRadius.circular(50),
-                                ),
+                                  Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: CircleAvatar(
+                                      radius: 18,
+                                      backgroundColor: Colors.white,
+                                      child: IconButton(
+                                        icon: Icon(
+                                          Icons.edit,
+                                          size: 20,
+                                          color: Colors.indigo[400],
+                                        ),
+                                        // Panggil fungsi upload dari controller
+                                        onPressed: () {
+                                          controller
+                                              .pickAndUploadProfilePicture();
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
+
+                              // --- AKHIR BAGIAN YANG DIUBAH ---
                               SizedBox(height: 20),
                               Text(
                                 datasiswa['nama'],
@@ -184,7 +234,9 @@ class ProfilePage extends GetView<HomeController> {
                                           ),
                                           leading: Icon(Icons.local_hospital),
                                           title: Text("Tempat, Tgl Lahir"),
-                                          subtitle: Text("${datasiswa['tempatLahir']}, - $formattedDateTglLahir",)
+                                          subtitle: Text(
+                                            "${datasiswa['tempatLahir']}, - $formattedDateTglLahir",
+                                          ),
                                         ),
                                         ListTile(
                                           contentPadding: EdgeInsets.symmetric(
@@ -194,7 +246,7 @@ class ProfilePage extends GetView<HomeController> {
                                           leading: Icon(Icons.male_outlined),
                                           title: Text("Jenis Kelamin"),
                                           subtitle: Text(
-                                            datasiswa['jeniskelamin']
+                                            datasiswa['jeniskelamin'],
                                           ),
                                         ),
                                         ListTile(
@@ -202,9 +254,7 @@ class ProfilePage extends GetView<HomeController> {
                                             horizontal: 12,
                                             vertical: 4,
                                           ),
-                                          leading: Icon(
-                                            Icons.ac_unit_outlined,
-                                          ),
+                                          leading: Icon(Icons.ac_unit_outlined),
                                           title: Text("Jumlah Hafalan"),
                                           subtitle: Text(datasiswa['email']),
                                         ),
@@ -226,20 +276,18 @@ class ProfilePage extends GetView<HomeController> {
                                             Icons.phone_android_outlined,
                                           ),
                                           title: Text("No Hp"),
-                                          subtitle: Text(
-                                            datasiswa['email'],
-                                          ),
+                                          subtitle: Text(datasiswa['email']),
                                         ),
                                         ListTile(
                                           contentPadding: EdgeInsets.symmetric(
                                             horizontal: 12,
                                             vertical: 4,
                                           ),
-                                          leading: Icon(Icons.menu_book_outlined),
-                                          title: Text("bersertifikat"),
-                                          subtitle: Text(
-                                            datasiswa['email'],
+                                          leading: Icon(
+                                            Icons.menu_book_outlined,
                                           ),
+                                          title: Text("bersertifikat"),
+                                          subtitle: Text(datasiswa['email']),
                                         ),
                                         ListTile(
                                           contentPadding: EdgeInsets.symmetric(
@@ -248,9 +296,7 @@ class ProfilePage extends GetView<HomeController> {
                                           ),
                                           leading: Icon(Icons.yard_outlined),
                                           title: Text("No. Sertifikat"),
-                                          subtitle: Text(
-                                            datasiswa['email'],
-                                          ),
+                                          subtitle: Text(datasiswa['email']),
                                         ),
                                       ],
                                     ),

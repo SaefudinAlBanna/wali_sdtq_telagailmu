@@ -5,9 +5,13 @@ import 'package:get/get.dart';
 import '../controllers/daftar_ekskul_controller.dart';
 
 class DaftarEkskulView extends GetView<DaftarEkskulController> {
-  const DaftarEkskulView({super.key});
+   DaftarEkskulView({super.key});
+
+   final dataArgumen = Get.arguments;
+   
   @override
   Widget build(BuildContext context) {
+    print("dataArgumen = ${dataArgumen[0]['namakelas']}");
     return Scaffold(
       appBar: AppBar(
         title: const Text('DaftarEkskulView'),
