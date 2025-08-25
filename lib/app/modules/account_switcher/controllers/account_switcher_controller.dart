@@ -1,34 +1,35 @@
 // app/modules/account_switcher/controllers/account_switcher_controller.dart
 import 'package:get/get.dart';
-import '../../../controllers/auth_controller.dart'; // Path ke AuthController global
-import '../../../models/account_model.dart'; // Path ke model Account
+import 'package:flutter/material.dart';
+import '../../../controllers/auth_controller.dart'; 
+import '../../../models/account_model.dart';
 import '../../../routes/app_pages.dart';
 
 class AccountSwitcherController extends GetxController {
-  final AuthController authC = Get.find<AuthController>(); // Dapatkan instance AuthController
+  // final AuthController authC = Get.find<AuthController>();
 
-  // RxList<Account> get savedAccounts => authC.savedAccounts; // Akses langsung dari AuthController
+  // // --- FUNGSI INI SEKARANG MEMANGGIL LOGIKA LOGIN OTOMATIS ---
+  // void selectAccount(Account account) {
+  //   // Panggil fungsi selectAccount dari AuthController yang sudah kita buat
+  //   authC.selectAccount(account);
+  // }
 
-  void selectAccount(Account account) {
-    // Navigasi ke LoginView dengan email yang sudah diisi
-    Get.toNamed(Routes.LOGIN, arguments: {'email': account.email});
-  }
+  // void loginWithNewAccount() {
+  //   Get.toNamed(Routes.LOGIN);
+  // }
 
-  void loginWithNewAccount() {
-    Get.toNamed(Routes.LOGIN); // Navigasi ke LoginView tanpa prefill
-  }
-
-  void removeAccount(Account account) {
-    // Tampilkan dialog konfirmasi
-    Get.defaultDialog(
-      title: "Hapus Akun",
-      middleText: "Anda yakin ingin menghapus akun ${account.email} dari daftar ini? Anda perlu login ulang untuk menggunakannya lagi.",
-      textConfirm: "Hapus",
-      textCancel: "Batal",
-      onConfirm: () {
-        authC.removeAccount(account);
-        Get.back(); // Tutup dialog
-      },
-    );
-  }
+  // void removeAccount(Account account) {
+  //   Get.defaultDialog(
+  //     title: "Hapus Akun",
+  //     middleText: "Anda yakin ingin menghapus akun ${account.email} dari daftar ini?",
+  //     textConfirm: "Hapus",
+  //     textCancel: "Batal",
+  //     confirmTextColor: Colors.white,
+  //     onConfirm: () {
+  //       // Panggil fungsi removeAccount dari AuthController
+  //       authC.removeAccount(account);
+  //       Get.back();
+  //     },
+  //   );
+  // }
 }

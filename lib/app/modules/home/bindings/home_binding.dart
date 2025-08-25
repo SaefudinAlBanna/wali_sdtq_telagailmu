@@ -1,7 +1,7 @@
 // home_binding.dart
 import 'package:get/get.dart';
+import '../../../controllers/storage_controller.dart';
 import '../controllers/home_controller.dart';
-import '../controllers/storage_controller.dart'; // <-- Tambahkan import
 
 class HomeBinding extends Bindings {
   @override

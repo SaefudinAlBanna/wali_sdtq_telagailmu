@@ -1,87 +1,77 @@
-// app/controllers/auth_controller.dart
+// lib/app/controllers/auth_controller.dart (VERSI FINAL & STABIL)
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
-import '../models/account_model.dart'; // Path ke model Account
-import '../routes/app_pages.dart'; // Path ke app_pages
+
+import '../modules/home/controllers/home_controller.dart';
+import '../modules/info_sekolah_list/controllers/info_sekolah_list_controller.dart';
+import '../routes/app_pages.dart'; // Import Routes
 
 class AuthController extends GetxController {
-  final _box = GetStorage();
-  final _accountsKey = 'saved_accounts';
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final FirebaseAuth auth = FirebaseAuth.instance;
+  final RxBool isLoading = false.obs;
 
-  RxList<Account> savedAccounts = <Account>[].obs;
+  // Stream tidak lagi diekspos secara publik karena tidak ada yang mendengarkannya lagi secara langsung.
+  // Splash screen menangani logika startup.
 
-  @override
-  void onInit() {
-    super.onInit();
-    _loadSavedAccounts();
-    // Dengarkan perubahan status otentikasi Firebase
-    _firebaseAuth.authStateChanges().listen((User? user) {
-      if (user == null) {
-        // Jika user logout dari Firebase, arahkan sesuai logika
-        if (hasSavedAccounts) {
-          Get.offAllNamed(Routes.ACCOUNT_SWITCHER);
-        } else {
-          Get.offAllNamed(Routes.LOGIN);
-        }
-      } else {
-        // User login, pastikan akunnya tersimpan
-        // Ini berguna jika user login dari perangkat lain atau clear data lalu login lagi
-        // saveAccount(user); // Atau biarkan LoginController yang handle ini saat login eksplisit
+  Future<void> login(String email, String password) async {
+    try {
+      isLoading.value = true;
+      await auth.signInWithEmailAndPassword(email: email.trim(), password: password.trim());
+      // Setelah login berhasil, kita navigasi ke Splash screen lagi.
+      // Splash screen akan membuat keputusan routing yang benar.
+      Get.offAllNamed(Routes.SPLASH);
+    } on FirebaseAuthException catch (e) {
+      String msg = "Gagal login. Periksa kembali email dan password Anda.";
+      if (e.code == 'user-not-found') msg = "Email tidak terdaftar.";
+      if (e.code == 'wrong-password') msg = "Password yang Anda masukkan salah.";
+      Get.snackbar("Gagal Login", msg, snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+    } catch (e) {
+      Get.snackbar("Error", "Terjadi kesalahan yang tidak diketahui.", snackPosition: SnackPosition.BOTTOM);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Future<void> logout() async {
+  //   try {
+  //     isLoading.value = true;
+  //     await auth.signOut();
+  //     // Setelah logout, kita navigasi ke Splash screen.
+  //     // Splash screen akan mendeteksi tidak ada sesi dan mengarahkan ke Login.
+  //     Get.offAllNamed(Routes.SPLASH);
+  //   } catch (e) {
+  //     Get.snackbar("Error", "Gagal untuk logout. Silakan coba lagi.", snackPosition: SnackPosition.BOTTOM);
+  //   } finally {
+  //     isLoading.value = false;
+  //   }
+  // }
+
+  Future<void> logout() async {
+    try {
+      isLoading.value = true;
+      
+      // --- [PERBAIKAN KEAMANAN] ---
+      // Hancurkan controller yang memiliki stream listener aktif secara paksa.
+      // Ini akan membatalkan semua subscription ke Firestore SEBELUM signOut().
+      if (Get.isRegistered<HomeController>()) {
+        Get.delete<HomeController>(force: true);
       }
-    });
-  }
+      if (Get.isRegistered<InfoSekolahListController>()) {
+        Get.delete<InfoSekolahListController>(force: true);
+      }
+      // Tambahkan controller lain yang memiliki stream di sini jika ada.
+      // ------------------------------------
 
-  void _loadSavedAccounts() {
-    final List<dynamic>? accountsJson = _box.read<List<dynamic>>(_accountsKey);
-    if (accountsJson != null) {
-      savedAccounts.value = accountsJson
-          .map((json) => Account.fromJson(json as Map<String, dynamic>))
-          .toList();
+      await auth.signOut();
+      
+      // Navigasi ke Splash Screen untuk mereset seluruh state aplikasi
+      Get.offAllNamed(Routes.SPLASH);
+    } catch (e) {
+      Get.snackbar("Error", "Gagal untuk logout. Silakan coba lagi.", snackPosition: SnackPosition.BOTTOM);
+    } finally {
+      isLoading.value = false;
     }
-  }
-
-  Future<void> saveAccount(User firebaseUser) async {
-    // Cek apakah akun sudah ada berdasarkan UID
-    final existingAccountIndex = savedAccounts.indexWhere((acc) => acc.uid == firebaseUser.uid);
-
-    final newAccount = Account(uid: firebaseUser.uid, email: firebaseUser.email!);
-
-    if (existingAccountIndex != -1) {
-      // Jika sudah ada, update (misalnya email jika berubah) dan pindahkan ke atas
-      savedAccounts.removeAt(existingAccountIndex);
-      savedAccounts.insert(0, newAccount); // Pindahkan ke paling atas (terbaru)
-    } else {
-      // Jika belum ada, tambahkan ke paling atas
-      savedAccounts.insert(0, newAccount);
-    }
-    _persistAccounts();
-  }
-
-  Future<void> removeAccount(Account accountToRemove) async {
-    savedAccounts.removeWhere((acc) => acc.uid == accountToRemove.uid);
-    _persistAccounts();
-    // Jika akun yang dihapus adalah akun yang sedang login di Firebase, logout juga dari Firebase
-    if (_firebaseAuth.currentUser?.uid == accountToRemove.uid) {
-      await _firebaseAuth.signOut();
-    }
-    // Jika tidak ada akun tersisa, dan tidak ada user firebase aktif, navigasi ke login
-    if (savedAccounts.isEmpty && _firebaseAuth.currentUser == null) {
-        Get.offAllNamed(Routes.LOGIN);
-    }
-  }
-
-  void _persistAccounts() {
-    final List<Map<String, dynamic>> accountsJson =
-        savedAccounts.map((acc) => acc.toJson()).toList();
-    _box.write(_accountsKey, accountsJson);
-  }
-
-  bool get hasSavedAccounts => savedAccounts.isNotEmpty;
-
-  Future<void> signOut() async {
-    await _firebaseAuth.signOut();
-    // Navigasi akan dihandle oleh listener authStateChanges atau StreamBuilder di main.dart
   }
 }

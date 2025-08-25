@@ -2,36 +2,52 @@ import 'package:get/get.dart';
 
 import '../modules/account_switcher/bindings/account_switcher_binding.dart';
 import '../modules/account_switcher/views/account_switcher_view.dart';
-import '../modules/daftar_ekskul/bindings/daftar_ekskul_binding.dart';
-import '../modules/daftar_ekskul/views/daftar_ekskul_view.dart';
 import '../modules/daftar_mata_pelajaran/bindings/daftar_mata_pelajaran_binding.dart';
 import '../modules/daftar_mata_pelajaran/views/daftar_mata_pelajaran_view.dart';
-import '../modules/daftar_nilai_halaqoh/bindings/daftar_nilai_halaqoh_binding.dart';
-import '../modules/daftar_nilai_halaqoh/views/daftar_nilai_halaqoh_view.dart';
+import '../modules/daftar_nilai_matapelajaran/bindings/daftar_nilai_matapelajaran_binding.dart';
+import '../modules/daftar_nilai_matapelajaran/views/daftar_nilai_matapelajaran_view.dart';
 import '../modules/daftar_pembayaran_komite/bindings/daftar_pembayaran_komite_binding.dart';
 import '../modules/daftar_pembayaran_komite/views/daftar_pembayaran_komite_view.dart';
 import '../modules/daftar_spp/bindings/daftar_spp_binding.dart';
 import '../modules/daftar_spp/views/daftar_spp_view.dart';
-import '../modules/detail_nilai_halaqoh/bindings/detail_nilai_halaqoh_binding.dart';
-import '../modules/detail_nilai_halaqoh/views/detail_nilai_halaqoh_view.dart';
+import '../modules/detail_mapel_siswa/bindings/detail_mapel_siswa_binding.dart';
+import '../modules/detail_mapel_siswa/views/detail_mapel_siswa_view.dart';
+import '../modules/ekskul_siswa/bindings/ekskul_siswa_binding.dart';
+import '../modules/ekskul_siswa/views/ekskul_siswa_view.dart';
 import '../modules/forgot_password/bindings/forgot_password_binding.dart';
 import '../modules/forgot_password/views/forgot_password_view.dart';
+import '../modules/halaqah_riwayat_siswa/bindings/halaqah_riwayat_siswa_binding.dart';
+import '../modules/halaqah_riwayat_siswa/views/halaqah_riwayat_siswa_view.dart';
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
 import '../modules/info_sekolah/bindings/info_sekolah_binding.dart';
 import '../modules/info_sekolah/views/info_sekolah_view.dart';
+import '../modules/info_sekolah_detail/bindings/info_sekolah_detail_binding.dart';
+import '../modules/info_sekolah_detail/views/info_sekolah_detail_view.dart';
+import '../modules/info_sekolah_list/bindings/info_sekolah_list_binding.dart';
+import '../modules/info_sekolah_list/views/info_sekolah_list_view.dart';
 import '../modules/input_dana_komite/bindings/input_dana_komite_binding.dart';
 import '../modules/input_dana_komite/views/input_dana_komite_view.dart';
 import '../modules/input_jadwal_agis/bindings/input_jadwal_agis_binding.dart';
 import '../modules/input_jadwal_agis/views/input_jadwal_agis_view.dart';
 import '../modules/jadwal_agis/bindings/jadwal_agis_binding.dart';
 import '../modules/jadwal_agis/views/jadwal_agis_view.dart';
-import '../modules/jadwal_pelajaran/bindings/jadwal_pelajaran_binding.dart';
-import '../modules/jadwal_pelajaran/views/jadwal_pelajaran_view.dart';
+import '../modules/jadwal_siswa/bindings/jadwal_siswa_binding.dart';
+import '../modules/jadwal_siswa/views/jadwal_siswa_view.dart';
+import '../modules/kalender_akademik/bindings/kalender_akademik_binding.dart';
+import '../modules/kalender_akademik/views/kalender_akademik_view.dart';
+import '../modules/lengkapi_profil/bindings/lengkapi_profil_binding.dart';
+import '../modules/lengkapi_profil/views/lengkapi_profil_view.dart';
 import '../modules/login/bindings/login_binding.dart';
 import '../modules/login/views/login_view.dart';
 import '../modules/new_password/bindings/new_password_binding.dart';
 import '../modules/new_password/views/new_password_view.dart';
+import '../modules/root/bindings/root_binding.dart';
+import '../modules/root/views/root_view.dart';
+import '../modules/semua_notifikasi/bindings/semua_notifikasi_binding.dart';
+import '../modules/semua_notifikasi/views/semua_notifikasi_view.dart';
+import '../modules/splash/bindings/splash_binding.dart';
+import '../modules/splash/views/splash_view.dart';
 import '../modules/tampilkan_info_sekolah/bindings/tampilkan_info_sekolah_binding.dart';
 import '../modules/tampilkan_info_sekolah/views/tampilkan_info_sekolah_view.dart';
 
@@ -40,7 +56,7 @@ part 'app_routes.dart';
 class AppPages {
   AppPages._();
 
-  static const INITIAL = Routes.HOME;
+  static const INITIAL = Routes.SPLASH;
 
   static final routes = [
     GetPage(
@@ -64,34 +80,14 @@ class AppPages {
       binding: ForgotPasswordBinding(),
     ),
     GetPage(
-      name: _Paths.JADWAL_PELAJARAN,
-      page: () => JadwalPelajaranView(),
-      binding: JadwalPelajaranBinding(),
-    ),
-    GetPage(
       name: _Paths.DAFTAR_MATA_PELAJARAN,
       page: () => DaftarMataPelajaranView(),
       binding: DaftarMataPelajaranBinding(),
     ),
     GetPage(
-      name: _Paths.DAFTAR_EKSKUL,
-      page: () => DaftarEkskulView(),
-      binding: DaftarEkskulBinding(),
-    ),
-    GetPage(
       name: _Paths.INFO_SEKOLAH,
       page: () => InfoSekolahView(),
       binding: InfoSekolahBinding(),
-    ),
-    GetPage(
-      name: _Paths.DAFTAR_NILAI_HALAQOH,
-      page: () => DaftarNilaiHalaqohView(),
-      binding: DaftarNilaiHalaqohBinding(),
-    ),
-    GetPage(
-      name: _Paths.DETAIL_NILAI_HALAQOH,
-      page: () => const DetailNilaiHalaqohView(),
-      binding: DetailNilaiHalaqohBinding(),
     ),
     GetPage(
       name: _Paths.TAMPILKAN_INFO_SEKOLAH,
@@ -105,17 +101,17 @@ class AppPages {
     ),
     GetPage(
       name: _Paths.DAFTAR_SPP,
-      page: () => DaftarSppView(),
+      page: () => const DaftarSppView(),
       binding: DaftarSppBinding(),
     ),
     GetPage(
       name: _Paths.DAFTAR_PEMBAYARAN_KOMITE,
-      page: () => DaftarPembayaranKomiteView(),
+      page: () => const DaftarPembayaranKomiteView(),
       binding: DaftarPembayaranKomiteBinding(),
     ),
     GetPage(
       name: _Paths.JADWAL_AGIS,
-      page: () => JadwalAgisView(),
+      page: () => const JadwalAgisView(),
       binding: JadwalAgisBinding(),
     ),
     GetPage(
@@ -127,6 +123,66 @@ class AppPages {
       name: _Paths.INPUT_DANA_KOMITE,
       page: () => const InputDanaKomiteView(),
       binding: InputDanaKomiteBinding(),
+    ),
+    GetPage(
+      name: _Paths.DAFTAR_NILAI_MATAPELAJARAN,
+      page: () => const DaftarNilaiMatapelajaranView(),
+      binding: DaftarNilaiMatapelajaranBinding(),
+    ),
+    GetPage(
+      name: _Paths.INFO_SEKOLAH_DETAIL,
+      page: () => const InfoSekolahDetailView(),
+      binding: InfoSekolahDetailBinding(),
+    ),
+    GetPage(
+      name: _Paths.ROOT,
+      page: () => const RootView(),
+      binding: RootBinding(),
+    ),
+    GetPage(
+      name: _Paths.SPLASH,
+      page: () => const SplashView(),
+      binding: SplashBinding(),
+    ),
+    GetPage(
+      name: _Paths.LENGKAPI_PROFIL,
+      page: () => const LengkapiProfilView(),
+      binding: LengkapiProfilBinding(),
+    ),
+    GetPage(
+      name: _Paths.SEMUA_NOTIFIKASI,
+      page: () => const SemuaNotifikasiView(),
+      binding: SemuaNotifikasiBinding(),
+    ),
+    GetPage(
+      name: _Paths.DETAIL_MAPEL_SISWA,
+      page: () => const DetailMapelSiswaView(),
+      binding: DetailMapelSiswaBinding(),
+    ),
+    GetPage(
+      name: _Paths.HALAQAH_RIWAYAT_SISWA,
+      page: () => const HalaqahRiwayatSiswaView(),
+      binding: HalaqahRiwayatSiswaBinding(),
+    ),
+    GetPage(
+      name: _Paths.EKSKUL_SISWA,
+      page: () => const EkskulSiswaView(),
+      binding: EkskulSiswaBinding(),
+    ),
+    GetPage(
+      name: _Paths.KALENDER_AKADEMIK,
+      page: () => const KalenderAkademikView(),
+      binding: KalenderAkademikBinding(),
+    ),
+    GetPage(
+      name: _Paths.INFO_SEKOLAH_LIST,
+      page: () => const InfoSekolahListView(),
+      binding: InfoSekolahListBinding(),
+    ),
+    GetPage(
+      name: _Paths.JADWAL_SISWA,
+      page: () => const JadwalSiswaView(),
+      binding: JadwalSiswaBinding(),
     ),
   ];
 }
