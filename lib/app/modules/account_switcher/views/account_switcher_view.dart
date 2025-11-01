@@ -1,82 +1,128 @@
-// app/modules/account_switcher/views/account_switcher_view.dart
+// lib/app/modules/account_switcher/views/account_switcher_view.dart
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../controllers/auth_controller.dart'; // Path ke AuthController
-import '../../../models/account_model.dart';     // Path ke model Account
+import 'package:cached_network_image/cached_network_image.dart';
+import '../controllers/account_switcher_controller.dart'; // Gunakan AccountSwitcherController
+import '../../../models/student_profile_preview_model.dart';
 import '../../../routes/app_pages.dart';
-import '../controllers/account_switcher_controller.dart';
-
-const Color orangeColors = Color(0xFFE53127);
 
 class AccountSwitcherView extends GetView<AccountSwitcherController> {
-  const AccountSwitcherView({super.key});
+  const AccountSwitcherView({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Dapatkan AuthController untuk mengakses savedAccounts secara reaktif
-    final AuthController authC = Get.find<AuthController>();
-
     return Scaffold(
-      // appBar: AppBar(
-      //   title: const Text("Pilih Akun"),
-      //   // backgroundColor: orangeColors,
-      //   backgroundColor: Colors.indigoAccent,
-      //   foregroundColor: Colors.white,
-      //   centerTitle: true,
-      //   // leading: IconButton(onPressed: () => Get.back(), icon: Icon(Icons.arrow_back_rounded)),
-      // ),
-      // body: Obx(() { // Gunakan Obx untuk merebuild saat savedAccounts berubah
-      //   if (authC.savedAccounts.isEmpty) {
-      //     // Seharusnya tidak pernah sampai sini jika logika di main.dart benar,
-      //     // tapi sebagai fallback
-      //     WidgetsBinding.instance.addPostFrameCallback((_) {
-      //        // controller.loginWithNewAccount(); // Langsung ke login jika tidak ada akun
-      //        // atau
-      //        Get.offAllNamed(Routes.LOGIN); // Lebih aman, karena jika user hapus semua akun dari sini
-      //     });
-      //     return const Center(child: Text("Tidak ada akun tersimpan."));
-      //   }
-      //   return ListView.builder(
-      //     padding: const EdgeInsets.all(16.0),
-      //     itemCount: authC.savedAccounts.length + 1, // +1 untuk tombol "Tambah Akun"
-      //     itemBuilder: (context, index) {
-      //       if (index == authC.savedAccounts.length) {
-      //         // Tombol "Login dengan akun lain" atau "Tambah Akun"
-      //         return Padding(
-      //           padding: const EdgeInsets.symmetric(vertical: 8.0),
-      //           child: OutlinedButton.icon(
-      //             icon: const Icon(Icons.add_circle_outline),
-      //             label: const Text("Login dengan akun lain"),
-      //             onPressed: controller.loginWithNewAccount,
-      //             style: OutlinedButton.styleFrom(
-      //               foregroundColor: orangeColors,
-      //               side: const BorderSide(color: orangeColors),
-      //               padding: const EdgeInsets.symmetric(vertical: 12),
-      //             ),
-      //           ),
-      //         );
-      //       }
+      appBar: AppBar(
+        title: const Text('Beralih Akun Siswa'),
+        backgroundColor: Colors.indigo.shade700,
+      ),
+      body: Obx(() {
+        if (controller.isProcessingAccount.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-      //       final Account account = authC.savedAccounts[index];
-      //       return Card(
-      //         margin: const EdgeInsets.symmetric(vertical: 8.0),
-      //         child: ListTile(
-      //           leading: CircleAvatar(
-      //             backgroundColor: orangeColors.withOpacity(0.2),
-      //             child: Icon(Icons.person, color: orangeColors),
-      //           ),
-      //           title: Text(account.email, style: TextStyle(fontWeight: FontWeight.w500)),
-      //           // subtitle: Text("UID: ${account.uid}"), // Bisa untuk debug
-      //           trailing: IconButton(
-      //             icon: Icon(Icons.delete_outline, color: Colors.grey[600]),
-      //             onPressed: () => controller.removeAccount(account),
-      //           ),
-      //           onTap: () => controller.selectAccount(account),
-      //         ),
-      //       );
-      //     },
-      //   );
-      // }),
+        if (controller.storedStudentAccounts.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text("Belum ada akun siswa yang tersimpan.", textAlign: TextAlign.center),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  onPressed: controller.goToLoginToAddAccount,
+                  icon: const Icon(Icons.person_add_alt_1),
+                  label: const Text("Tambah Akun Siswa"),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16.0),
+          itemCount: controller.storedStudentAccounts.length + 1, // +1 untuk tombol tambah akun
+          itemBuilder: (context, index) {
+            if (index < controller.storedStudentAccounts.length) {
+              final student = controller.storedStudentAccounts[index];
+              final isActive = controller.currentActiveStudent.value?.uid == student.uid;
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                elevation: isActive ? 4 : 1,
+                color: isActive ? Colors.indigo.shade50 : null,
+                child: ListTile(
+                  leading: _buildProfileAvatar(student),
+                  title: Text(student.namaLengkap, style: TextStyle(fontWeight: isActive ? FontWeight.bold : FontWeight.normal)),
+                  subtitle: Text("Kelas: ${student.kelasId}"),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isActive)
+                        const Icon(Icons.check_circle, color: Colors.green, semanticLabel: "Akun Aktif")
+                      else
+                        IconButton(
+                          icon: const Icon(Icons.switch_account, color: Colors.blue),
+                          onPressed: () => controller.switchStudentAccount(student.uid),
+                          tooltip: "Beralih ke akun ini",
+                        ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                        onPressed: () => controller.removeStudentAccount(student.uid),
+                        tooltip: "Hapus akun dari daftar",
+                      ),
+                    ],
+                  ),
+                  onTap: isActive ? null : () => controller.switchStudentAccount(student.uid),
+                ),
+              );
+            } else {
+              // Tombol Tambah Akun
+              return Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: ElevatedButton.icon(
+                  onPressed: controller.goToLoginToAddAccount,
+                  icon: const Icon(Icons.person_add_alt_1),
+                  label: const Text("Tambah Akun Siswa Lain"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.shade600,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              );
+            }
+          },
+        );
+      }),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: OutlinedButton.icon(
+          onPressed: controller.isProcessingAccount.value ? null : () => controller.logoutAllAccounts(),
+          icon: const Icon(Icons.logout),
+          label: const Text("Logout Dari Semua Akun"),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.red,
+            side: BorderSide(color: Colors.red.shade200),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileAvatar(StudentProfilePreview student) {
+    return CircleAvatar(
+      radius: 24,
+      backgroundColor: Colors.indigo.shade400,
+      backgroundImage: student.fotoProfilUrl != null && student.fotoProfilUrl!.isNotEmpty
+          ? CachedNetworkImageProvider(student.fotoProfilUrl!)
+          : null,
+      child: student.fotoProfilUrl == null || student.fotoProfilUrl!.isEmpty
+          ? Text(student.namaLengkap[0].toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 20))
+          : null,
     );
   }
 }

@@ -25,19 +25,38 @@ class EkskulSiswaController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadInitialData();
+    // [PERBAIKAN KUNCI] Panggil loadInitialData HANYA setelah ConfigController selesai memuat konfigurasi
+    ever(configC.isKonfigurasiLoading, (bool isLoadingConfig) {
+      if (!isLoadingConfig && pageMode.value == PageMode.Loading) { // Hanya panggil sekali saat selesai loading
+        loadInitialData();
+      }
+    });
+    // Jika sudah selesai loading saat onInit dipanggil, panggil langsung
+    if (!configC.isKonfigurasiLoading.value && pageMode.value == PageMode.Loading) {
+      loadInitialData();
+    }
   }
 
   Future<void> loadInitialData() async {
-    pageMode.value = PageMode.Loading;
+    // Pastikan ini tidak berulang kali dipanggil jika sudah selesai
+    if (pageMode.value != PageMode.Loading) return;
+
+    pageMode.value = PageMode.Loading; // Pastikan status loading di awal
     try {
-      // --- [PERBAIKAN KUNCI] Tunggu sinyal dari ConfigController, bukan HomeController ---
-      await configC.konfigurasiFuture; 
+      // Pastikan tahun ajaran dan semester sudah terisi dari ConfigController
+      final String tahunAjaran = configC.tahunAjaranAktif.value;
+      final String semester = configC.semesterAktif.value;
+
+      if (tahunAjaran.isEmpty || tahunAjaran.contains("TIDAK") || semester.isEmpty) {
+        errorMessage.value = "Konfigurasi tahun ajaran atau semester belum siap.";
+        pageMode.value = PageMode.Error;
+        print("### EKSKUL ERROR: $errorMessage");
+        return;
+      }
       
-      // Setelah ini, dijamin configC.tahunAjaranAktif.value sudah terisi
       final pendaftaranSnap = await _firestore
           .collection('Sekolah').doc(configC.idSekolah)
-          .collection('tahunajaran').doc(configC.tahunAjaranAktif.value)
+          .collection('tahunajaran').doc(tahunAjaran)
           .collection('ekskul_pendaftaran')
           .where('status', isEqualTo: 'Dibuka').limit(1).get();
 
@@ -51,8 +70,8 @@ class EkskulSiswaController extends GetxController {
         pageMode.value = PageMode.PendaftaranDibuka;
         final ekskulSnap = await _firestore.collection('Sekolah').doc(configC.idSekolah)
             .collection('ekskul_ditawarkan')
-            .where('tahunAjaran', isEqualTo: configC.tahunAjaranAktif.value)
-            .where('semester', isEqualTo: configC.semesterAktif.value).get();
+            .where('tahunAjaran', isEqualTo: tahunAjaran)
+            .where('semester', isEqualTo: semester).get();
         daftarEkskul.assignAll(ekskulSnap.docs.map((d) => EkskulModel.fromFirestore(d)).toList());
       } else {
         pageMode.value = PageMode.PendaftaranDitutup;
@@ -73,6 +92,12 @@ class EkskulSiswaController extends GetxController {
   }
 
   Future<void> toggleEkskulSelection(EkskulModel ekskul, bool isSelected) async {
+    // [PERBAIKAN] Tambahkan pengecekan null untuk pendaftaranAktif
+    if (pendaftaranAktif.value == null) {
+      Get.snackbar("Peringatan", "Pendaftaran tidak aktif. Tidak bisa memperbarui pilihan ekskul.");
+      return;
+    }
+
     isSaving.value = true;
     try {
       final uid = authC.auth.currentUser!.uid;
@@ -83,16 +108,21 @@ class EkskulSiswaController extends GetxController {
       if (isSelected) {
         ekskulTerpilih[ekskul.id] = true;
         batch.update(siswaRef, {'ekskulTerdaftar.${ekskul.id}': true});
+        // [PERBAIKAN] Pastikan path ke ekskulDipilih sesuai dengan rules dan model
         batch.update(pendaftaranRef, {'ekskulDipilih.${ekskul.id}': FieldValue.arrayUnion([uid])});
       } else {
         ekskulTerpilih.remove(ekskul.id);
         batch.update(siswaRef, {'ekskulTerdaftar.${ekskul.id}': FieldValue.delete()});
+        // [PERBAIKAN] Pastikan path ke ekskulDipilih sesuai dengan rules dan model
         batch.update(pendaftaranRef, {'ekskulDipilih.${ekskul.id}': FieldValue.arrayRemove([uid])});
       }
       
       await batch.commit();
       Get.snackbar("Berhasil", isSelected ? "Terdaftar di ${ekskul.namaEkskul}" : "Pendaftaran ${ekskul.namaEkskul} dibatalkan");
-    } catch (e) { Get.snackbar("Error", "Gagal memperbarui pilihan: $e"); }
+    } catch (e) { 
+      Get.snackbar("Error", "Gagal memperbarui pilihan: ${e.toString()}"); 
+      print("### EKSKUL TOGGLE ERROR: $e");
+    }
     finally { isSaving.value = false; }
   }
 }

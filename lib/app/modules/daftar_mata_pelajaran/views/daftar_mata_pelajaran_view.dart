@@ -17,21 +17,22 @@ class DaftarMataPelajaranView extends GetView<DaftarMataPelajaranController> {
         centerTitle: true,
       ),
       body: Obx(() {
-        if (controller.isKonfigurasiLoading.value) {
+        // [PERBAIKAN] Gunakan configC.isKonfigurasiLoading
+        if (controller.configC.isKonfigurasiLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (controller.tahunAjaranAktif.value.contains("TIDAK_AKTIF")) {
+        // [PERBAIKAN] Gunakan configC.tahunAjaranAktif
+        if (controller.configC.tahunAjaranAktif.value.contains("TIDAK_AKTIF")) {
           return const Center(child: Text("Data akademik belum tersedia."));
         }
         
-        // [DIUBAH] Gunakan FutureBuilder
         return FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
-          future: controller.getMataPelajaranSiswa(), // Panggil fungsi Future
+          future: controller.getMataPelajaranSiswa(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
-            if (snapshot.hasError) { // Tangani error dari Future
+            if (snapshot.hasError) {
               return Center(child: Text("Error: ${snapshot.error}"));
             }
             if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -40,7 +41,6 @@ class DaftarMataPelajaranView extends GetView<DaftarMataPelajaranController> {
 
             final mapelList = snapshot.data!.docs;
 
-            // Logika ListView tetap sama, tidak perlu diubah
             return ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: mapelList.length,
@@ -55,8 +55,8 @@ class DaftarMataPelajaranView extends GetView<DaftarMataPelajaranController> {
                       child: Icon(Icons.menu_book_rounded, color: Colors.indigo.shade700),
                     ),
                     title: Text(mapel.namaMapel, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    // subtitle: Text("Guru: ${mapel.namaGuru}"),
-                    subtitle: Text("Guru: ${mapel.alias}"),
+                    // [PERBAIKAN] Gunakan aliasGuru dengan fallback ke namaGuru
+                    subtitle: Text("Guru: ${mapel.aliasGuru ?? mapel.namaGuru}"),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => controller.goToDetailMapel(mapel),
                   ),

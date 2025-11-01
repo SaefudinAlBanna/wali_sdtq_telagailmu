@@ -1,45 +1,70 @@
+// android/app/build.gradle.kts
 plugins {
     id("com.android.application")
-    // START: FlutterFire Configuration
     id("com.google.gms.google-services")
-    // END: FlutterFire Configuration
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+import java.util.Properties
+import java.io.FileInputStream
 
 android {
-    namespace = "com.telagailmu.wali_sdtq_telagailmu"
+    // [PERHATIAN]: Pastikan namespace ini sesuai dengan aplikasi orang tua, bukan aplikasi sekolah.
+    // Namespace dari aplikasi sekolah: "com.unadigital.pkbmtelagailmuyogyakarta"
+    // Namespace dari aplikasi orang tua yang kita kerjakan: "com.unadigital.parent.pkbmtelagailmuyogyakarta"
+    // Saya asumsikan namespace Anda yang benar adalah yang di komentar saya, mohon dicek ulang.
+    namespace = "com.unadigital.parent.pkbmtelagailmuyogyakarta" 
+    compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
-    compileSdk = 35
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        // [PERBAIKAN] Kembali ke Java 11, seperti di aplikasi sekolah yang bekerja
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
+        // [PERBAIKAN] Kembali ke Java 11
+        jvmTarget = JavaVersion.VERSION_11.toString()
+    }
+
+    val keystorePropertiesFile = rootProject.file("key.properties")
+    val keystoreProperties = Properties()
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+    }
+
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
+        }
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.telagailmu.wali_sdtq_telagailmu"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        // [PERHATIAN]: Pastikan applicationId ini sesuai dengan aplikasi orang tua, bukan aplikasi sekolah.
+        applicationId = "com.unadigital.parent.pkbmtelagailmuyogyakarta" 
         minSdk = 23
-        targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
         multiDexEnabled = true
     }
 
     buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+        getByName("release") {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
@@ -49,6 +74,8 @@ flutter {
 }
 
 dependencies {
-  implementation("com.android.support:multidex:1.0.3")
-  implementation("com.google.firebase:firebase-appcheck-debug:16.0.0-beta01")
+    implementation(platform("com.google.firebase:firebase-bom:34.2.0"))
+    implementation("com.android.support:multidex:1.0.3") // Perhatikan, ini versi lama
+    implementation("com.google.firebase:firebase-appcheck-debug:16.0.0-beta01") 
+    implementation("com.google.firebase:firebase-analytics")
 }

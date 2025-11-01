@@ -10,6 +10,8 @@ import '../modules/daftar_pembayaran_komite/bindings/daftar_pembayaran_komite_bi
 import '../modules/daftar_pembayaran_komite/views/daftar_pembayaran_komite_view.dart';
 import '../modules/daftar_spp/bindings/daftar_spp_binding.dart';
 import '../modules/daftar_spp/views/daftar_spp_view.dart';
+import '../modules/detail_keuangan_siswa/bindings/detail_keuangan_siswa_binding.dart';
+import '../modules/detail_keuangan_siswa/views/detail_keuangan_siswa_view.dart';
 import '../modules/detail_mapel_siswa/bindings/detail_mapel_siswa_binding.dart';
 import '../modules/detail_mapel_siswa/views/detail_mapel_siswa_view.dart';
 import '../modules/ekskul_siswa/bindings/ekskul_siswa_binding.dart';
@@ -36,12 +38,28 @@ import '../modules/jadwal_siswa/bindings/jadwal_siswa_binding.dart';
 import '../modules/jadwal_siswa/views/jadwal_siswa_view.dart';
 import '../modules/kalender_akademik/bindings/kalender_akademik_binding.dart';
 import '../modules/kalender_akademik/views/kalender_akademik_view.dart';
+import '../modules/kas_komite/bindings/kas_komite_binding.dart';
+import '../modules/kas_komite/views/kas_komite_view.dart';
+import '../modules/laporan_komite/bindings/laporan_komite_binding.dart';
+import '../modules/laporan_komite/views/laporan_komite_view.dart';
 import '../modules/lengkapi_profil/bindings/lengkapi_profil_binding.dart';
 import '../modules/lengkapi_profil/views/lengkapi_profil_view.dart';
 import '../modules/login/bindings/login_binding.dart';
 import '../modules/login/views/login_view.dart';
+import '../modules/manajemen_agis/bindings/manajemen_agis_binding.dart';
+import '../modules/manajemen_agis/views/manajemen_agis_view.dart';
+import '../modules/manajemen_iuran/bindings/manajemen_iuran_binding.dart';
+import '../modules/manajemen_iuran/views/manajemen_iuran_view.dart';
+import '../modules/manajemen_komite_sekolah/bindings/manajemen_komite_sekolah_binding.dart';
+import '../modules/manajemen_komite_sekolah/views/manajemen_komite_sekolah_view.dart';
+import '../modules/marketplace/bindings/marketplace_binding.dart';
+import '../modules/marketplace/views/marketplace_view.dart';
 import '../modules/new_password/bindings/new_password_binding.dart';
 import '../modules/new_password/views/new_password_view.dart';
+import '../modules/onboarding/bindings/onboarding_binding.dart';
+import '../modules/onboarding/views/onboarding_view.dart';
+import '../modules/pembelian_buku/bindings/pembelian_buku_binding.dart';
+import '../modules/pembelian_buku/views/pembelian_buku_view.dart';
 import '../modules/root/bindings/root_binding.dart';
 import '../modules/root/views/root_view.dart';
 import '../modules/semua_notifikasi/bindings/semua_notifikasi_binding.dart';
@@ -50,6 +68,9 @@ import '../modules/splash/bindings/splash_binding.dart';
 import '../modules/splash/views/splash_view.dart';
 import '../modules/tampilkan_info_sekolah/bindings/tampilkan_info_sekolah_binding.dart';
 import '../modules/tampilkan_info_sekolah/views/tampilkan_info_sekolah_view.dart';
+import '../modules/catatan_bk/bindings/catatan_bk_binding.dart';
+import '../modules/catatan_bk/views/catatan_bk_detail_view.dart';
+import '../modules/catatan_bk/views/catatan_bk_list_view.dart';
 
 part 'app_routes.dart';
 
@@ -183,6 +204,61 @@ class AppPages {
       name: _Paths.JADWAL_SISWA,
       page: () => const JadwalSiswaView(),
       binding: JadwalSiswaBinding(),
+    ),
+    GetPage(
+      name: _Paths.MARKETPLACE,
+      page: () => const MarketplaceView(),
+      binding: MarketplaceBinding(),
+    ),
+    GetPage(
+      name: _Paths.ONBOARDING,
+      page: () => const OnboardingView(),
+      binding: OnboardingBinding(),
+    ),
+    GetPage(
+      name: _Paths.DETAIL_KEUANGAN_SISWA,
+      page: () => const DetailKeuanganSiswaView(),
+      binding: DetailKeuanganSiswaBinding(),
+    ),
+    GetPage(
+      name: _Paths.PEMBELIAN_BUKU,
+      page: () => const PembelianBukuView(),
+      binding: PembelianBukuBinding(),
+    ),
+    GetPage(
+      name: _Paths.MANAJEMEN_IURAN,
+      page: () => const ManajemenIuranView(),
+      binding: ManajemenIuranBinding(),
+    ),
+    GetPage(
+      name: _Paths.MANAJEMEN_AGIS,
+      page: () => const ManajemenAgisView(),
+      binding: ManajemenAgisBinding(),
+    ),
+    GetPage(
+      name: _Paths.MANAJEMEN_KOMITE_SEKOLAH,
+      page: () => const ManajemenKomiteSekolahView(),
+      binding: ManajemenKomiteSekolahBinding(),
+    ),
+    GetPage(
+      name: _Paths.KAS_KOMITE,
+      page: () => const KasKomiteView(),
+      binding: KasKomiteBinding(),
+    ),
+    GetPage(
+      name: _Paths.LAPORAN_KOMITE,
+      page: () => const LaporanKomiteView(),
+      binding: LaporanKomiteBinding(),
+    ),
+    GetPage(
+      name: _Paths.CATATAN_BK_LIST,
+      page: () => const CatatanBkListView(),
+      binding: CatatanBkBinding(),
+    ),
+    GetPage(
+      name: _Paths.CATATAN_BK_DETAIL,
+      page: () => const CatatanBkDetailView(),
+      binding: CatatanBkBinding(),
     ),
   ];
 }

@@ -31,19 +31,26 @@ class DetailMapelSiswaController extends GetxController with GetTickerProviderSt
     semester = args['semester'] ?? '';
     kelasId = args['kelasId'] ?? '';
 
+    // [PERBAIKAN] Panggil fetchAllData() hanya setelah configC.isKonfigurasiLoading false
+    // agar tahunAjaran, semester, kelasId, dll. sudah dijamin terisi.
+    // Jika tidak menggunakan FutureBuilder, Anda bisa menggunakan ever listener.
+    // Karena Anda menggunakan FutureBuilder, inisialisasi dataMapel di sini sudah cukup.
+    // Namun, pastikan argumen yang diterima goToDetailMapel sudah lengkap.
     dataMapel = fetchAllData();
   }
 
   Future<Map<String, dynamic>> fetchAllData() async {
     final uid = authC.auth.currentUser!.uid;
 
+    // --- [PERBAIKAN KUNCI] Koreksi Path `siswaMapelRef` ---
     final siswaMapelRef = _firestore
         .collection('Sekolah').doc(configC.idSekolah)
         .collection('tahunajaran').doc(tahunAjaran)
         .collection('kelastahunajaran').doc(kelasId)
+        .collection('daftarsiswa').doc(uid)      // <--- DAFTAR SISWA SEBELUM SEMESTER
         .collection('semester').doc(semester)
-        .collection('daftarsiswa').doc(uid)
         .collection('matapelajaran').doc(idMapel);
+    // --- AKHIR PERBAIKAN PATH ---
 
     final pengumumanRef = _firestore
         .collection('Sekolah').doc(configC.idSekolah)
@@ -65,10 +72,8 @@ class DetailMapelSiswaController extends GetxController with GetTickerProviderSt
     final nilaiHarianDocs = (results[2] as QuerySnapshot).docs;
 
     return {
-      // --- [FIX] Tambahkan cast di sini ---
       'pengumuman': pengumumanDocs.map((doc) => PengumumanMapelModel.fromFirestore(doc as QueryDocumentSnapshot<Map<String, dynamic>>)).toList(),
       'nilaiUtama': nilaiUtamaDoc.data() as Map<String, dynamic>? ?? {},
-      // --- [FIX] Tambahkan cast di sini ---
       'nilaiHarian': nilaiHarianDocs.map((doc) => NilaiHarianModel.fromFirestore(doc as QueryDocumentSnapshot<Map<String, dynamic>>)).toList(),
     };
   }

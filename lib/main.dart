@@ -1,4 +1,4 @@
-// lib/main.dart (Aplikasi Orang Tua - DENGAN URUTAN YANG BENAR)
+// lib/main.dart
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -10,9 +10,14 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 import 'app/controllers/storage_controller.dart';
 
+import 'app/controllers/account_manager_controller.dart'; 
+import 'app/services/auth_secure_storage_service.dart'; 
 import 'app/controllers/auth_controller.dart';
 import 'app/controllers/config_controller.dart';
+import 'app/modules/home/controllers/home_controller.dart';
+import 'app/modules/home/controllers/profile_controller.dart';
 import 'app/routes/app_pages.dart';
+
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -36,19 +41,28 @@ Future<void> main() async {
   await GetStorage.init();
   await initializeDateFormatting('id_ID', null);
 
-  // --- PERBAIKAN URUTAN KRUSIAL DI SINI ---
-  // 1. Daftarkan ConfigController TERLEBIH DAHULU, karena AuthController bergantung padanya.
+  // Daftarkan service dan controller permanent
+  // Urutan yang benar untuk menghindari circular dependency di constructor/onInit
+  Get.put(AuthSecureStorageService(), permanent: true); // Paling dasar, tidak ada dependencies di constructor
+
+  // Karena ConfigController dan AccountManagerController sekarang
+  // sama-sama memindahkan Get.find() ke onInit(), urutan Get.put() mereka 
+  // menjadi kurang kritikal dalam konteks circular dependency.
+  // Ini adalah urutan yang aman:
   Get.put(ConfigController(), permanent: true);
-  
-  // 2. Baru daftarkan AuthController.
+  Get.put(AccountManagerController(), permanent: true);
+
+  // Controller lain yang tidak memiliki circular dependency atau dependen pada yang di atas.
   Get.put(AuthController(), permanent: true);
   Get.put(StorageController(), permanent: true);
+  Get.put(HomeController(), permanent: true);
+  Get.put(ProfileController(), permanent: true);
 
   runApp(
     GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: "Wali PKBM Telagailmu",
-      initialRoute: AppPages.INITIAL, // Akan mengarah ke '/splash'
+      initialRoute: AppPages.INITIAL,
       getPages: AppPages.routes,
     ),
   );

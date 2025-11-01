@@ -67,7 +67,7 @@ class _JadwalCard extends StatelessWidget {
           children: [
             Column(
               children: [
-                Icon(Icons.access_time_filled_rounded, color: Colors.amber.shade700, size: 28),
+                Icon(Icons.access_time_filled_rounded, color: Colors.indigo.shade700, size: 28),
                 const SizedBox(height: 4),
                 Text(
                   pelajaran['jam'] ?? 'N/A',

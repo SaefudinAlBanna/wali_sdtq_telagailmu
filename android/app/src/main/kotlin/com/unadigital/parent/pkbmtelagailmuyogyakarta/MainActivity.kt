@@ -1,4 +1,4 @@
-package com.telagailmu.wali_sdtq_telagailmu
+package com.unadigital.parent.pkbmtelagailmuyogyakarta
 
 import io.flutter.embedding.android.FlutterActivity
 

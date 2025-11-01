@@ -1,35 +1,23 @@
-// app/modules/account_switcher/controllers/account_switcher_controller.dart
+// lib/app/modules/account_switcher/controllers/account_switcher_controller.dart
+
 import 'package:get/get.dart';
-import 'package:flutter/material.dart';
-import '../../../controllers/auth_controller.dart'; 
-import '../../../models/account_model.dart';
-import '../../../routes/app_pages.dart';
+import '../../../controllers/account_manager_controller.dart'; 
+import '../../../models/student_profile_preview_model.dart';
+import '../../../routes/app_pages.dart'; // [FIXED]: Ensure import is here
 
 class AccountSwitcherController extends GetxController {
-  // final AuthController authC = Get.find<AuthController>();
+  final AccountManagerController _accountManager = Get.find<AccountManagerController>();
 
-  // // --- FUNGSI INI SEKARANG MEMANGGIL LOGIKA LOGIN OTOMATIS ---
-  // void selectAccount(Account account) {
-  //   // Panggil fungsi selectAccount dari AuthController yang sudah kita buat
-  //   authC.selectAccount(account);
-  // }
+  Rxn<StudentProfilePreview> get currentActiveStudent => _accountManager.currentActiveStudent;
+  // [FIXED]: Correct return type to RxList
+  RxList<StudentProfilePreview> get storedStudentAccounts => _accountManager.storedStudentAccounts; 
+  RxBool get isProcessingAccount => _accountManager.isProcessingAccount;
 
-  // void loginWithNewAccount() {
-  //   Get.toNamed(Routes.LOGIN);
-  // }
+  Future<void> switchStudentAccount(String uid) => _accountManager.switchStudentAccount(uid);
+  Future<void> removeStudentAccount(String uid) => _accountManager.removeStudentAccount(uid);
+  Future<void> logoutAllAccounts() => _accountManager.logoutAllAccounts();
 
-  // void removeAccount(Account account) {
-  //   Get.defaultDialog(
-  //     title: "Hapus Akun",
-  //     middleText: "Anda yakin ingin menghapus akun ${account.email} dari daftar ini?",
-  //     textConfirm: "Hapus",
-  //     textCancel: "Batal",
-  //     confirmTextColor: Colors.white,
-  //     onConfirm: () {
-  //       // Panggil fungsi removeAccount dari AuthController
-  //       authC.removeAccount(account);
-  //       Get.back();
-  //     },
-  //   );
-  // }
+  void goToLoginToAddAccount() {
+    Get.toNamed(Routes.LOGIN, arguments: {'isAddingAccount': true});
+  }
 }

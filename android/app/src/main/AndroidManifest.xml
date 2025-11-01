@@ -1,10 +1,18 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<!-- Menambahkan xmlns:tools di sini sangat penting -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
     <application
         android:label="Wali PKBM Telagailmu"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
-          <!-- Activity Utama Aplikasi Flutter Anda (MainActivity) -->
-         <!-- Activity Utama Aplikasi Flutter Anda (MainActivity) -->
+
+        <!-- =================================================================== -->
+        <!-- BARIS PENTING: Perintah untuk menghapus izin AD_ID saat build -->
+        <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove"/>
+        <!-- =================================================================== -->
+
+        <!-- Activity Utama Aplikasi Flutter Anda (MainActivity) -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -45,11 +53,7 @@
     <!-- Izin untuk versi Android yang lebih lama -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     
-    <!-- Required to query activities that can process text, see:
-         https://developer.android.com/training/package-visibility and
-         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
-
-         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
+    <!-- Required to query activities that can process text -->
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>

@@ -76,7 +76,14 @@ class DetailMapelSiswaView extends GetView<DetailMapelSiswaController> {
               color: Get.theme.primaryColor,
             ),
             title: Text(item.judul, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text("Diumumkan pada: ${DateFormat('dd MMM yyyy').format(item.tanggalDibuat)}"),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Catatan : ${item.catatan}", style: const TextStyle(fontSize: 12)),
+                SizedBox(height: 10),
+                Text("Diumumkan pada: ${DateFormat('dd MMM yyyy').format(item.tanggalDibuat)}"),
+              ],
+            ),
           ),
         );
       },

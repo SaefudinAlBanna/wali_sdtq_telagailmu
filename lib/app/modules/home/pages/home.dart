@@ -137,6 +137,7 @@ class _FuturisticHeaderCard extends GetView<HomeController> {
     final String? imageUrlFromDb = userData['fotoProfilUrl'];
     // Cek keamanan: pastikan URL tidak null dan tidak kosong
     final bool isUrlValid = imageUrlFromDb != null && imageUrlFromDb.isNotEmpty;
+    final peranKomite = controller.configC.infoUser['peranKomite'] as Map<String, dynamic>?;
 
     return Stack(
       clipBehavior: Clip.none,
@@ -187,7 +188,7 @@ class _FuturisticHeaderCard extends GetView<HomeController> {
                         ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 2),
               Text(
                 (userData['namaPanggilan'] as String?)?.toUpperCase() ??  'NAMA SISWA',
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white, shadows: [Shadow(blurRadius: 5, color: Colors.black54)]),
@@ -197,6 +198,23 @@ class _FuturisticHeaderCard extends GetView<HomeController> {
                 "Kelas: ${userData['kelasId'] ?? '...'}",
                 style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.9)),
               ),
+
+              // [WIDGET BARU DITAMBAHKAN DI SINI]
+              if (peranKomite != null && peranKomite['jabatan'] != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      peranKomite['jabatan'].toString(),
+                      style: const TextStyle(fontSize: 12, color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -279,16 +297,41 @@ class _MenuGrid extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
+    final peranKomite = controller.configC.infoUser['peranKomite'] as Map<String, dynamic>?;
+    final isBendahara = peranKomite?['jabatan'] == 'Bendahara Kelas';
+    final isPjAgis = peranKomite?['jabatan'] == 'PJ AGIS';
+    final isKetuaKomite = peranKomite?['jabatan'] == 'Ketua Komite Sekolah';
+    final isBendaharaSekolah = peranKomite?['jabatan'] == 'Bendahara Komite Sekolah';
+
     final List<Map<String, dynamic>> menuItems = [
       {'title': 'Akademik','image': 'assets/png/tumpukan_buku.png','onTap': () => controller.goToDaftarMapel()},
       {'title': 'Halaqoh','image': 'assets/png/daftar_tes.png','onTap': () => controller.goToHalaqahRiwayat()},
       {'title': 'Ekskul','image': 'assets/png/list_nilai.png','onTap': () => controller.goToEkskulSiswa()},
-      {'title': 'SPP','image': 'assets/png/uang.png','onTap': () => Get.snackbar("Info", "Fitur SPP akan segera hadir!")},
+      {'title': 'Keuangan','image': 'assets/png/uang.png','onTap': () => Get.toNamed(Routes.DETAIL_KEUANGAN_SISWA)},
       {'title': 'Jadwal Pelajaran', 'image': 'assets/png/layar.png', 'onTap': controller.goToJadwalSiswa},
       {'title': 'Kalender Akademik','image': 'assets/png/akademik_2.png','onTap': () => controller.goToKalenderAkademik()},
-      {'title': 'Kesehatan','image': 'assets/png/pengumuman.png','onTap': () => Get.snackbar("Info", "Fitur Kesehatan akan segera hadir!")},
-      {'title': 'Lainnya','image': 'assets/png/faq.png','onTap': () => Get.snackbar("Info", "Fitur Lainnya akan segera hadir!")},
+      {'title': 'AGIIS','image': 'assets/png/pengumuman.png','onTap': () => Get.toNamed(Routes.MANAJEMEN_AGIS)},
+      {'title': 'Buku','image': 'assets/png/akademik_1.png','onTap': () => Get.toNamed(Routes.PEMBELIAN_BUKU)},
+      {'title': 'Catatan Perkembangan','image': 'assets/png/pengumuman.png','onTap': controller.goToCatatanPerkembangan},
     ];
+
+    // [MENU BARU KONDISIONAL]
+    if (isBendahara) {
+      menuItems.add({'title': 'Kelola Iuran','image': 'assets/png/buku_uang.png','onTap': () => Get.toNamed(Routes.MANAJEMEN_IURAN)});
+    }
+    if (isPjAgis) {
+      menuItems.add({'title': 'Kelola AGIS','image': 'assets/png/pengumuman.png','onTap': () => Get.toNamed(Routes.MANAJEMEN_AGIS)});
+    }
+    if (isKetuaKomite) {
+      menuItems.add({'title': 'Manajemen Komite','image': 'assets/png/ktp.png','onTap': () => Get.toNamed(Routes.MANAJEMEN_KOMITE_SEKOLAH)});
+    }
+    if (isBendahara) {
+      menuItems.add({'title': 'Kas Kelas','image': 'assets/png/buku_uang.png','onTap': () => Get.toNamed(Routes.KAS_KOMITE)});
+    }
+
+    if (isBendaharaSekolah || isKetuaKomite) {
+      menuItems.add({'title': 'Kas Komite Pusat','image': 'assets/png/uang.png','onTap': () => Get.toNamed(Routes.KAS_KOMITE)});
+    }
 
     return Card(
       elevation: 2,

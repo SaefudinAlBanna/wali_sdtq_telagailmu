@@ -1,4 +1,4 @@
-// lib/app/modules/home/controllers/home_controller.dart (Aplikasi Orang Tua - VERSI FINAL)
+// lib/app/modules/home/controllers/home_controller.dart
 
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -10,60 +10,106 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../../models/carousel_item_model.dart';
 import '../../../controllers/auth_controller.dart';
 import '../../../controllers/config_controller.dart';
+import '../../../controllers/account_manager_controller.dart'; 
 import '../../../routes/app_pages.dart';
+import '../../../models/halaqah_setoran_model.dart';
 
 class HomeController extends GetxController {
   final AuthController authC = Get.find<AuthController>();
   final ConfigController configC = Get.find<ConfigController>();
+  final AccountManagerController _accountManager = Get.find<AccountManagerController>();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   late PersistentTabController tabController;
-
-  // --- [BARU] STATE UNTUK DATA AKADEMIK ---
-  final RxString tahunAjaranAktif = "".obs;
-  final RxString semesterAktif = "".obs;
-  // State ini penting untuk menunggu pengambilan tahun ajaran selesai
-  final RxBool isKonfigurasiAkademikLoading = true.obs;
 
   final RxBool isCarouselLoading = true.obs;
   final RxList<CarouselItemModel> daftarCarousel = <CarouselItemModel>[].obs;
 
   final AudioPlayer _audioPlayer = AudioPlayer();
-  StreamSubscription? _notificationSubscription;
+  StreamSubscription? _notificationMetadataSubscription;
   int _previousUnreadCount = 0;
   
-  // --- DEFINISI REFERENSI DOKUMEN SISWA UNTUK KEMUDAHAN ---
-  DocumentReference<Map<String, dynamic>> get _siswaDocRef => _firestore
-      .collection('Sekolah').doc(configC.idSekolah)
-      .collection('siswa').doc(authC.auth.currentUser!.uid);
+  // Gunakan UID dari akun siswa yang sedang aktif di AccountManagerController
+  DocumentReference<Map<String, dynamic>>? get _siswaDocRef {
+    final activeStudentUid = _accountManager.currentActiveStudent.value?.uid;
+    if (activeStudentUid == null || configC.idSekolah.isEmpty) {
+      return null;
+    }
+    return _firestore
+        .collection('Sekolah').doc(configC.idSekolah)
+        .collection('siswa').doc(activeStudentUid);
+  }
 
    @override
   void onInit() {
     super.onInit();
     tabController = PersistentTabController(initialIndex: 0);
-    // TIDAK ADA LAGI PANGGILAN _fetchKonfigurasiAkademik di sini. Ini sudah benar.
-    _listenToNotifications();
   }
 
    @override
   void onReady() {
     super.onReady();
-    // Gunakan listener untuk auto-refresh jika user logout lalu login lagi
-    ever(configC.isKonfigurasiLoading, (bool isLoading) {
-      if (!isLoading) { // Jika proses loading konfigurasi selesai
-        fetchCarouselData();
+    // Listener untuk currentActiveStudent juga
+    ever(_accountManager.currentActiveStudent, (_) {
+      print("[HomeController] _accountManager.currentActiveStudent changed. Re-fetching carousel and notifications.");
+      _maybeFetchCarouselAndNotifications();
+    });
+
+    ever(configC.infoUser, (_) {
+      print("[HomeController] configC.infoUser changed. Re-fetching carousel and notifications.");
+      _maybeFetchCarouselAndNotifications();
+    });
+
+    ever(configC.isKonfigurasiLoading, (bool isLoadingConfig) {
+      print("[HomeController] configC.isKonfigurasiLoading changed: $isLoadingConfig.");
+      if (!isLoadingConfig && configC.infoUser.isNotEmpty && _accountManager.currentActiveStudent.value != null) {
+        _maybeFetchCarouselAndNotifications();
+      } else if (isLoadingConfig) {
+        _notificationMetadataSubscription?.cancel();
+        _notificationMetadataSubscription = null;
+        daftarCarousel.clear();
       }
     });
-    // Panggil sekali saat pertama kali siap
-    if (!configC.isKonfigurasiLoading.value) {
-      fetchCarouselData();
+
+    // Inisialisasi awal
+    if (!configC.isKonfigurasiLoading.value && 
+        configC.infoUser.isNotEmpty &&
+        _accountManager.currentActiveStudent.value != null) {
+      print("[HomeController] Initial state ready. Fetching carousel and notifications.");
+      _maybeFetchCarouselAndNotifications();
+    } else {
+      print("[HomeController] Initial state not fully ready yet.");
     }
+  }
+
+  void _maybeFetchCarouselAndNotifications() {
+    final currentActiveStudent = _accountManager.currentActiveStudent.value;
+    // Gunakan _auth.currentUser.uid untuk check apakah ada user login di firebase auth.
+    // Jika tidak ada user login di firebase auth, maka tidak bisa melakukan query data firebase.
+    if (authC.auth.currentUser == null ||
+        currentActiveStudent == null || 
+        configC.infoUser.isEmpty || 
+        configC.tahunAjaranAktif.value.isEmpty || 
+        configC.tahunAjaranAktif.value.contains("TIDAK") || 
+        configC.semesterAktif.value.isEmpty ||
+        (currentActiveStudent.kelasId).isEmpty) {
+      
+      print("[HomeController] Essential config/active student data not ready. Skipping fetch.");
+      daftarCarousel.clear();
+      isCarouselLoading.value = false;
+      _notificationMetadataSubscription?.cancel();
+      _notificationMetadataSubscription = null;
+      return;
+    }
+    print("[HomeController] All essential config/active student data ready. Proceeding with fetch.");
+    fetchCarouselData();
+    _listenToNotifications();
   }
 
   @override
   void onClose() {
     tabController.dispose();
-    _notificationSubscription?.cancel();
+    _notificationMetadataSubscription?.cancel();
     _audioPlayer.dispose();
     super.onClose();
   }
@@ -76,19 +122,18 @@ class HomeController extends GetxController {
       final String tahunAjaran = configC.tahunAjaranAktif.value;
       final String semester = configC.semesterAktif.value;
       final String namaHari = DateFormat('EEEE', 'id_ID').format(now);
-      final String kelasId = configC.infoUser['kelasId'] ?? '';
-
-      if (tahunAjaran.isEmpty || tahunAjaran.contains("TIDAK") || kelasId.isEmpty) {
-        daftarCarousel.clear(); isCarouselLoading.value = false; return;
-      }
       
+      final String kelasId = _accountManager.currentActiveStudent.value!.kelasId; 
+      final String uidSiswa = _accountManager.currentActiveStudent.value!.uid;
+
+      final List<CarouselItemModel> tempCarouselItems = [];
+
       // [Prioritas #0: Pesan Pimpinan]
       final pesanPimpinan = configC.konfigurasiDashboard['pesanPimpinan'] as Map<String, dynamic>?;
       if (pesanPimpinan != null) {
         final berlakuHingga = (pesanPimpinan['berlakuHingga'] as Timestamp?)?.toDate();
         if (berlakuHingga != null && now.isBefore(berlakuHingga)) {
-          daftarCarousel.assign(CarouselItemModel(namaKelas: "Info Sekolah", tipe: CarouselContentType.Prioritas, judul: "PENGUMUMAN PENTING", isi: pesanPimpinan['pesan'] ?? '', ikon: Icons.campaign_rounded, warna: Colors.red.shade700));
-          isCarouselLoading.value = false; return;
+          tempCarouselItems.add(CarouselItemModel(namaKelas: "Info Sekolah", tipe: CarouselContentType.Prioritas, judul: "PENGUMUMAN PENTING", isi: pesanPimpinan['pesan'] ?? '', ikon: Icons.campaign_rounded, warna: Colors.red.shade700));
         }
       }
 
@@ -99,28 +144,25 @@ class HomeController extends GetxController {
         final tglSelesai = (data['tanggalSelesai'] as Timestamp).toDate();
         if (todayWithoutTime.isBefore(tglSelesai.add(const Duration(days: 1)))) {
           final isLibur = data['isLibur'] as bool? ?? false;
-          // --- [PERBAIKAN WARNA] ---
-          daftarCarousel.assign(CarouselItemModel(namaKelas: "Info Sekolah", tipe: CarouselContentType.Info, 
+          tempCarouselItems.add(CarouselItemModel(namaKelas: "Info Sekolah", tipe: CarouselContentType.Info, 
           judul: isLibur ? "HARI LIBUR" : "INFO KEGIATAN", isi: data['namaKegiatan'] ?? 'Tanpa Judul', 
           ikon: isLibur ? Icons.weekend_rounded : Icons.event_note_rounded, 
           warna: isLibur ? Colors.red.shade400 : Colors.teal.shade700));
-          isCarouselLoading.value = false; return;
+          break;
         }
       }
-
+      
       // [Prioritas #2: Hari Libur (Sabtu/Minggu)]
       if (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday) {
-        final String pesanDefault = "Selamat beristirahat dan tetap semangat belajar di rumah ya!";
-        // --- [PERBAIKAN WARNA] ---
-        daftarCarousel.assign(CarouselItemModel(namaKelas: "Info Sekolah", tipe: CarouselContentType.Default, 
-        judul: "SELAMAT BERAKHIR PEKAN", isi: pesanDefault, 
+        final String pesanLiburDariDb = configC.konfigurasiDashboard['pesanDefaultLibur'] as String? ?? "";
+        final String pesanLiburFinal = pesanLiburDariDb.isEmpty ? "Selamat beristirahat dan tetap semangat belajar di rumah ya!" : pesanLiburDariDb;
+        tempCarouselItems.add(CarouselItemModel(namaKelas: "Info Sekolah", tipe: CarouselContentType.Default, 
+        judul: "SELAMAT BERAKHIR PEKAN", isi: pesanLiburFinal, 
         ikon: Icons.beach_access_rounded, warna: Colors.blue.shade700));
-        isCarouselLoading.value = false; return;
       }
-      
-      // [Prioritas #3-#6: Logika KBM Siswa]
+
+      // [Prioritas #3: Jadwal KBM Hari Ini (Sedang Berlangsung / Berikutnya)]
       final jadwalDoc = await _firestore.collection('Sekolah').doc(configC.idSekolah).collection('tahunajaran').doc(tahunAjaran).collection('jadwalkelas').doc(kelasId).get();
-      
       if(jadwalDoc.exists) {
         final jadwalData = jadwalDoc.data()!;
         final listSlot = (jadwalData[namaHari] ?? jadwalData[namaHari.toLowerCase()]) as List? ?? [];
@@ -133,57 +175,166 @@ class HomeController extends GetxController {
         final startTime = DateFormat("HH:mm").parse(timeParts[0].trim()); 
         final endTime = DateFormat("HH:mm").parse(timeParts[1].trim()); 
         if (nowTime.isAfter(startTime) && nowTime.isBefore(endTime)) { slotBerlangsung = slot; break; } 
-        if (nowTime.isBefore(startTime) && slotBerikutnya == null) {
-           slotBerikutnya = slot; } } catch(e) {} 
-           }
+        if (nowTime.isBefore(startTime) && slotBerikutnya == null) { slotBerikutnya = slot; } } catch(e) {} } 
         
-        CarouselItemModel item;
         if (slotBerlangsung != null) {
-          item = CarouselItemModel(namaKelas: "Kelas ${kelasId.split('-').first}", tipe: CarouselContentType.KBM, 
+          tempCarouselItems.add(CarouselItemModel(namaKelas: "Kelas ${kelasId.split('-').first}", tipe: CarouselContentType.KBM, 
           judul: "Saat Ini Berlangsung", isi: slotBerlangsung['namaMapel'] ?? 'N/A', 
-          subJudul: "Oleh: ${slotBerlangsung['namaGuru'] ?? 'N/A'}", ikon: Icons.school_rounded, warna: Colors.indigo.shade700);
+          subJudul: "Oleh: ${slotBerlangsung['namaGuru'] ?? 'N/A'}", ikon: Icons.school_rounded, warna: Colors.indigo.shade700));
         } else if (slotBerikutnya != null) {
-          item = CarouselItemModel(namaKelas: "Kelas ${kelasId.split('-').first}", tipe: CarouselContentType.KBM, 
+          tempCarouselItems.add(CarouselItemModel(namaKelas: "Kelas ${kelasId.split('-').first}", tipe: CarouselContentType.KBM, 
           judul: "Pelajaran Berikutnya", isi: slotBerikutnya['namaMapel'] ?? 'N/A', 
-          subJudul: "Jam: ${slotBerikutnya['jam'] ?? 'N/A'}", ikon: Icons.update_rounded, warna: Colors.blue.shade700);
+          subJudul: "Jam: ${slotBerikutnya['jam'] ?? 'N/A'}", ikon: Icons.update_rounded, warna: Colors.blue.shade700));
         } else {
-          // item = CarouselItemModel(namaKelas: "Info Kelas", tipe: CarouselContentType.Default, judul: "KBM Telah Selesai", isi: "Terima kasih untuk semangat belajarnya hari ini!", ikon: Icons.check_circle_outline_rounded, warna: Colors.grey.shade700);
-          item = CarouselItemModel(namaKelas: "Info Kelas", tipe: CarouselContentType.Default, 
-          judul: "KBM Telah Selesai", isi: "Terima kasih untuk semangat belajarnya hari ini!", 
-          ikon: Icons.check_circle_outline_rounded, warna: Colors.blueGrey.shade700);
+          final String pesanSelesaiDariDb = configC.konfigurasiDashboard['pesanDefaultSetelahKBM'] as String? ?? "";
+          final String pesanSelesaiFinal = pesanSelesaiDariDb.isEmpty ? "Aktivitas belajar telah usai, tetap belajar dirumah ya" : pesanSelesaiDariDb;
+
+          tempCarouselItems.add(CarouselItemModel(namaKelas: "Info Kelas", tipe: CarouselContentType.Default, 
+          judul: "KBM Telah Selesai", isi: pesanSelesaiFinal, 
+          ikon: Icons.check_circle_outline_rounded, warna: Colors.blueGrey.shade700));
+
+          final tomorrow = now.add(const Duration(days: 1));
+          final namaHariBesok = DateFormat('EEEE', 'id_ID').format(tomorrow);
+          final listSlotBesok = (jadwalData[namaHariBesok] ?? jadwalData[namaHariBesok.toLowerCase()]) as List? ?? [];
+          if (listSlotBesok.isNotEmpty) {
+            listSlotBesok.sort((a,b) => (a['jam'] as String).compareTo(b['jam'] as String));
+            final firstSlotBesok = listSlotBesok.first;
+            tempCarouselItems.add(CarouselItemModel(namaKelas: "Kelas ${kelasId.split('-').first}", tipe: CarouselContentType.Info,
+              judul: "Jadwal Besok", isi: firstSlotBesok['namaMapel'] ?? 'N/A',
+              subJudul: "Jam: ${firstSlotBesok['jam'] ?? 'N/A'}", ikon: Icons.calendar_today_rounded, warna: Colors.orange.shade700));
+          }
         }
-        daftarCarousel.assign(item);
       } else {
-        // Fallback jika jadwal tidak ditemukan
-        daftarCarousel.assign(CarouselItemModel(namaKelas: "Info", tipe: CarouselContentType.Default, judul: "Selamat Belajar!", 
+        tempCarouselItems.add(CarouselItemModel(namaKelas: "Info", tipe: CarouselContentType.Default, judul: "Selamat Belajar!", 
         isi: "Manfaatkan waktu sebaik-baiknya untuk menuntut ilmu.", 
         ikon: Icons.auto_stories, warna: Colors.green.shade800));
       }
+
+      // [BARU] Informasi Halaqah Hari Ini
+      final halaqahSiswaSnap = await _firestore.collection('Sekolah').doc(configC.idSekolah)
+          .collection('siswa').doc(uidSiswa)
+          .collection('halaqah_nilai')
+          .where('tanggalTugas', isGreaterThanOrEqualTo: Timestamp.fromDate(todayWithoutTime))
+          .where('tanggalTugas', isLessThan: Timestamp.fromDate(todayWithoutTime.add(const Duration(days: 1))))
+          .orderBy('tanggalTugas', descending: true)
+          .limit(1).get();
+      
+      if (halaqahSiswaSnap.docs.isNotEmpty) {
+        final halaqah = HalaqahSetoranModel.fromFirestore(halaqahSiswaSnap.docs.first);
+        String halaqahJudul = "Halaqah Hari Ini";
+        String halaqahIsi;
+        Color halaqahWarna = Colors.purple.shade700;
+        IconData halaqahIkon = Icons.menu_book_rounded;
+
+        if (halaqah.status == 'Sudah Dinilai') {
+          final int nilaiSabak = halaqah.nilai['sabak'] ?? 0;
+          final int nilaiSabqi = halaqah.nilai['sabqi'] ?? 0;
+          final int nilaiManzil = halaqah.nilai['manzil'] ?? 0;
+          final int totalNilai = nilaiSabak + nilaiSabqi + nilaiManzil;
+          halaqahIsi = "Setoran Selesai, Nilai: $totalNilai";
+          halaqahWarna = Colors.green.shade700;
+        } else if (halaqah.status == 'Tugas Diberikan') {
+          halaqahIsi = "Ada tugas setoran (${halaqah.tugas['sabak'] ?? 'N/A'})";
+          halaqahWarna = Colors.orange.shade700;
+        } else if (halaqah.status == 'Tidak Hadir') {
+            halaqahIsi = "Ananda tidak masuk halaqah hari ini.";
+            halaqahWarna = Colors.red.shade700;
+            halaqahIkon = Icons.person_off_rounded;
+        } else {
+          halaqahIsi = "Status: ${halaqah.status}";
+          halaqahWarna = Colors.blue.shade700;
+        }
+        
+        tempCarouselItems.add(CarouselItemModel(namaKelas: "Halaqah", tipe: CarouselContentType.Info,
+          judul: halaqahJudul, isi: halaqahIsi,
+          subJudul: "Pengampu: ${halaqah.aliasPengampu ?? halaqah.namaPengampu}",
+          ikon: halaqahIkon, warna: halaqahWarna));
+      } else {
+        tempCarouselItems.add(CarouselItemModel(namaKelas: "Halaqah", tipe: CarouselContentType.Default,
+          judul: "Info Halaqah", isi: "Belum ada tugas setoran hari ini.",
+          ikon: Icons.task_alt, warna: Colors.teal.shade700));
+      }
+
+
+      // [BARU] Rekap Absensi Siswa Harian (diri sendiri)
+      final absensiSiswaSnap = await _firestore.collection('Sekolah').doc(configC.idSekolah)
+          .collection('tahunajaran').doc(tahunAjaran)
+          .collection('kelastahunajaran').doc(kelasId)
+          .collection('daftarsiswa').doc(uidSiswa)
+          .collection('semester').doc(semester)
+          .collection('absensi_siswa').doc(DateFormat('yyyy-MM-dd').format(now)).get();
+      
+      if (absensiSiswaSnap.exists) {
+        final statusAbsen = absensiSiswaSnap.data()?['status'] ?? 'Belum Tercatat';
+        Color absensiColor = Colors.grey;
+        String absensiDesc = "Status absensi hari ini: $statusAbsen";
+        if (statusAbsen == 'Hadir') absensiColor = Colors.green.shade700;
+        else if (statusAbsen == 'Sakit') absensiColor = Colors.orange.shade700;
+        else if (statusAbsen == 'Izin') absensiColor = Colors.blue.shade700;
+        else if (statusAbsen == 'Alfa') absensiColor = Colors.red.shade700;
+
+        tempCarouselItems.add(CarouselItemModel(namaKelas: "Absensi", tipe: CarouselContentType.Info,
+          judul: "Kehadiran Hari Ini", isi: absensiDesc,
+          ikon: Icons.person_pin_rounded, warna: absensiColor));
+      }
+
+      // [BARU] Tugas/Ulangan Mendekat (atau yang Diumumkan Hari Ini)
+      final tugasUlanganSnap = await _firestore.collection('Sekolah').doc(configC.idSekolah)
+          .collection('tahunajaran').doc(tahunAjaran)
+          .collection('kelastahunajaran').doc(kelasId)
+          .collection('semester').doc(semester)
+          .collection('tugas_ulangan')
+          .where('tanggal_dibuat', isGreaterThanOrEqualTo: Timestamp.fromDate(todayWithoutTime))
+          .orderBy('tanggal_dibuat', descending: true)
+          .limit(1).get();
+
+      if (tugasUlanganSnap.docs.isNotEmpty) {
+        final tugas = tugasUlanganSnap.docs.first.data();
+        final kategori = tugas['kategori'] ?? 'Tugas';
+        final judulTugas = tugas['judul'] ?? 'Tanpa Judul';
+        final deskripsiTugas = tugas['deskripsi'] ?? '';
+        
+        tempCarouselItems.add(CarouselItemModel(namaKelas: "Peringatan", tipe: CarouselContentType.Info,
+          judul: "$kategori Baru", isi: "$judulTugas: $deskripsiTugas",
+          ikon: kategori == 'PR' ? Icons.assignment_rounded : Icons.quiz_rounded, warna: Colors.purple.shade700));
+      }
+
+      daftarCarousel.assignAll(tempCarouselItems);
 
     } catch (e) {
       print("### Gagal membangun carousel: $e");
       daftarCarousel.assign(CarouselItemModel(namaKelas: "Error", tipe: CarouselContentType.Default, judul: "GAGAL MEMUAT DATA", isi: "Silakan coba lagi.", ikon: Icons.error_outline_rounded, warna: Colors.grey.shade700));
     } finally {
       isCarouselLoading.value = false;
+      print("[HomeController] Carousel loading finished. DaftarCarousel size: ${daftarCarousel.length}");
     }
   }
 
   void _listenToNotifications() {
-    _notificationSubscription = streamNotificationMetadata().listen((snapshot) {
+    final siswaRef = _siswaDocRef;
+    if (siswaRef == null) {
+      print("[HomeController] Not listening to notifications: _siswaDocRef is null.");
+      _notificationMetadataSubscription?.cancel();
+      _notificationMetadataSubscription = null;
+      return;
+    }
+
+    _notificationMetadataSubscription?.cancel();
+    _notificationMetadataSubscription = streamNotificationMetadata().listen((snapshot) {
       if (snapshot.exists) {
         final newCount = snapshot.data()?['unreadCount'] ?? 0;
-        // Putar suara HANYA jika jumlah notifikasi baru lebih besar dari sebelumnya
         if (newCount > _previousUnreadCount) {
           _playNotificationSound();
         }
-        _previousUnreadCount = newCount; // Selalu update hitungan terakhir
+        _previousUnreadCount = newCount;
       }
+    }, onError: (error) {
+      print("Error listening to notification metadata: $error");
     });
   }
 
   void _playNotificationSound() async {
     try {
-      // Pastikan path ini sesuai dengan yang Anda daftarkan di pubspec.yaml
       await _audioPlayer.play(AssetSource('audio/notifikasi.mp3'));
     } catch (e) {
       print("Error saat memutar suara notifikasi: $e");
@@ -213,7 +364,7 @@ class HomeController extends GetxController {
         .collection('tahunajaran').doc(tahunAjaran)
         .collection('info_sekolah')
         .orderBy('timestamp', descending: true)
-        .limit(5) // <-- KUNCI UTAMA
+        .limit(5)
         .snapshots();
   }
 
@@ -222,8 +373,12 @@ class HomeController extends GetxController {
   }
 
   void goToJadwalSiswa() {
-  Get.toNamed(Routes.JADWAL_SISWA);
-}
+    Get.toNamed(Routes.JADWAL_SISWA);
+  }
+
+  void goToCatatanPerkembangan() {
+    Get.toNamed(Routes.CATATAN_BK_LIST);
+  }
 
   void goToSemuaInformasi() {
     Get.toNamed(Routes.INFO_SEKOLAH_LIST);
@@ -245,56 +400,72 @@ class HomeController extends GetxController {
     Get.toNamed(Routes.LENGKAPI_PROFIL, arguments: configC.infoUser);
   }
 
-
   void goToDaftarMapel() {
     Get.toNamed(Routes.DAFTAR_MATA_PELAJARAN);
   }
 
   Stream<DocumentSnapshot<Map<String, dynamic>>> streamUserData() {
-    return _siswaDocRef.snapshots();
+    final siswaRef = _siswaDocRef;
+    if (siswaRef == null) return const Stream.empty();
+    return siswaRef.snapshots();
   }
 
-  // --- [BARU] STREAM UNTUK NOTIFIKASI TERBARU DI DASHBOARD ---
   Stream<QuerySnapshot<Map<String, dynamic>>> streamLatestNotifications() {
-    return _siswaDocRef
+    final siswaRef = _siswaDocRef;
+    if (siswaRef == null) return const Stream.empty();
+    return siswaRef
         .collection('notifikasi')
         .orderBy('tanggal', descending: true)
-        .limit(5) // Mengambil 5 notifikasi terbaru
+        .limit(5)
         .snapshots();
   }
   
-  // --- [BARU] STREAM UNTUK METADATA NOTIFIKASI (UNREAD COUNT) ---
   Stream<DocumentSnapshot<Map<String, dynamic>>> streamNotificationMetadata() {
-    return _siswaDocRef
+    final siswaRef = _siswaDocRef;
+    if (siswaRef == null) return const Stream.empty();
+    return siswaRef
         .collection('notifikasi_meta')
         .doc('metadata')
         .snapshots();
   }
 
-  // --- [BARU] FUNGSI UNTUK NAVIGASI DAN RESET UNREAD COUNT ---
   void goToSemuaNotifikasi() {
-    // Reset unread count menjadi 0 di Firestore
-    _siswaDocRef
+    final siswaRef = _siswaDocRef;
+    if (siswaRef == null) {
+      Get.snackbar("Peringatan", "Data pengguna belum siap. Silakan coba lagi.");
+      return;
+    }
+    siswaRef
         .collection('notifikasi_meta')
         .doc('metadata')
         .set({'unreadCount': 0}, SetOptions(merge: true));
     
-    // Navigasi ke halaman daftar semua notifikasi
     Get.toNamed(Routes.SEMUA_NOTIFIKASI);
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> streamMataPelajaranSiswa() {
-    // Ambil kelasId dari infoUser yang sudah ada di ConfigController
-    final String kelasId = configC.infoUser['kelasId'] ?? '';
+    final uid = _accountManager.currentActiveStudent.value?.uid;
+    final kelasId = _accountManager.currentActiveStudent.value?.kelasId;
+
+    final String tahunAjaran = configC.tahunAjaranAktif.value;
+    final String semester = configC.semesterAktif.value;
     
-    // Pastikan semua data yang dibutuhkan sudah siap
-    if (kelasId.isEmpty || tahunAjaranAktif.value.isEmpty || semesterAktif.value.isEmpty) {
-      // Kembalikan stream kosong jika data belum siap
+    if (uid == null || kelasId == null || kelasId.isEmpty || tahunAjaran.isEmpty || tahunAjaran.contains("TIDAK") || semester.isEmpty) {
       return const Stream.empty();
     }
 
-    return _siswaDocRef
+    return _firestore
+        .collection('Sekolah').doc(configC.idSekolah)
+        .collection('tahunajaran').doc(tahunAjaran)
+        .collection('kelastahunajaran').doc(kelasId)
+        .collection('daftarsiswa').doc(uid)
+        .collection('semester').doc(semester)
         .collection('matapelajaran')
         .snapshots();
+  }
+
+  // [FIXED]: Method untuk Switch Akun
+  void goToAccountSwitcher() {
+    Get.toNamed(Routes.ACCOUNT_SWITCHER);
   }
 }

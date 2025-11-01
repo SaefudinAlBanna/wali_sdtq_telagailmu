@@ -28,6 +28,18 @@ abstract class Routes {
   static const KALENDER_AKADEMIK = _Paths.KALENDER_AKADEMIK;
   static const INFO_SEKOLAH_LIST = _Paths.INFO_SEKOLAH_LIST;
   static const JADWAL_SISWA = _Paths.JADWAL_SISWA;
+  static const MARKETPLACE = _Paths.MARKETPLACE;
+  static const ONBOARDING = _Paths.ONBOARDING;
+  static const DETAIL_KEUANGAN_SISWA = _Paths.DETAIL_KEUANGAN_SISWA;
+  static const PEMBELIAN_BUKU = _Paths.PEMBELIAN_BUKU;
+  static const MANAJEMEN_IURAN = _Paths.MANAJEMEN_IURAN;
+  static const MANAJEMEN_AGIS = _Paths.MANAJEMEN_AGIS;
+  static const MANAJEMEN_KOMITE_SEKOLAH = _Paths.MANAJEMEN_KOMITE_SEKOLAH;
+  static const KAS_KOMITE = _Paths.KAS_KOMITE;
+  static const LAPORAN_KOMITE = _Paths.LAPORAN_KOMITE;
+  static const CATATAN_BK = _Paths.CATATAN_BK;
+  static const CATATAN_BK_LIST = _Paths.CATATAN_BK_LIST;
+  static const CATATAN_BK_DETAIL = _Paths.CATATAN_BK_DETAIL;
 }
 
 abstract class _Paths {
@@ -57,4 +69,16 @@ abstract class _Paths {
   static const KALENDER_AKADEMIK = '/kalender-akademik';
   static const INFO_SEKOLAH_LIST = '/info-sekolah-list';
   static const JADWAL_SISWA = '/jadwal-siswa';
+  static const MARKETPLACE = '/marketplace';
+  static const ONBOARDING = '/onboarding';
+  static const DETAIL_KEUANGAN_SISWA = '/detail-keuangan-siswa';
+  static const PEMBELIAN_BUKU = '/pembelian-buku';
+  static const MANAJEMEN_IURAN = '/manajemen-iuran';
+  static const MANAJEMEN_AGIS = '/manajemen-agis';
+  static const MANAJEMEN_KOMITE_SEKOLAH = '/manajemen-komite-sekolah';
+  static const KAS_KOMITE = '/kas-komite';
+  static const LAPORAN_KOMITE = '/laporan-komite';
+  static const CATATAN_BK = '/catatan-bk';
+  static const CATATAN_BK_LIST = '/catatan-bk-list';
+  static const CATATAN_BK_DETAIL = '/catatan-bk-detail';
 }

@@ -3,28 +3,28 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MapelSiswaModel {
-  final String id; // ID Mapel
+  final String id;
   final String namaMapel;
   final String namaGuru;
-  final String alias;
-  final String idGuru;
+  final String? aliasGuru; // [BARU] Tambahkan field aliasGuru
+  final double? nilaiAkhir;
 
   MapelSiswaModel({
     required this.id,
     required this.namaMapel,
     required this.namaGuru,
-    required this.alias,
-    required this.idGuru,
+    this.aliasGuru, // [BARU] Tambahkan ke constructor
+    this.nilaiAkhir,
   });
 
-  factory MapelSiswaModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data() ?? {};
+  factory MapelSiswaModel.fromFirestore(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data();
     return MapelSiswaModel(
       id: doc.id,
       namaMapel: data['namaMapel'] ?? 'Tanpa Nama',
-      namaGuru: data['namaGuru'] ?? 'Belum Ditentukan',
-      alias: data['alias'] ?? data['namaGuru'] ?? 'N/A',
-      idGuru: data['idGuru'] ?? '',
+      namaGuru: data['namaGuru'] ?? 'N/A',
+      aliasGuru: data['aliasGuruPencatatAkhir'] as String?, // [PERBAIKAN] Ambil dari field yang benar di Firestore
+      nilaiAkhir: (data['nilai_akhir'] as num?)?.toDouble(),
     );
   }
 }
