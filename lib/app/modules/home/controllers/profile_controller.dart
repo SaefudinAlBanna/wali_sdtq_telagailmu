@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
+
 import '../../../controllers/config_controller.dart';
 import '../../../controllers/storage_controller.dart';
 import '../../../controllers/account_manager_controller.dart';
@@ -27,9 +30,9 @@ class ProfileController extends GetxController {
     try {
       // 1. Ambil gambar dari galeri
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-      if (image == null) return; // Pengguna membatalkan
+      if (image == null) return;
 
-      // 2. Crop gambar (UX yang bagus)
+      // 2. Crop gambar
       CroppedFile? croppedFile = await ImageCropper().cropImage(
         sourcePath: image.path,
         aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
@@ -38,28 +41,84 @@ class ProfileController extends GetxController {
           IOSUiSettings(title: 'Pangkas Foto', aspectRatioLockEnabled: true),
         ],
       );
-      if (croppedFile == null) return; // Pengguna membatalkan crop
+      if (croppedFile == null) return;
 
-      // 3. Upload ke Supabase
       isLoading.value = true;
-      final fileToUpload = File(croppedFile.path);
-      final newUrl = await storageC.uploadProfilePicture(fileToUpload, configC.infoUser['uid']);
+      
+      // 3. [BARU] Panggil fungsi kompresi pada gambar yang sudah di-crop
+      File fileToProcess = File(croppedFile.path);
+      File? compressedFile = await _compressImage(fileToProcess);
+      
+      if (compressedFile == null) {
+        // Gagal kompresi, hentikan proses
+        throw Exception("Gagal memproses gambar.");
+      }
+      
+      // 4. Upload gambar yang SUDAH DIKOMPRES ke Supabase
+      final newUrl = await storageC.uploadProfilePicture(compressedFile, configC.infoUser['uid']);
 
       if (newUrl != null) {
-        // 4. Simpan URL baru ke Firestore
+        // 5. Simpan URL baru ke Firestore
         await _firestore
             .collection('Sekolah').doc(configC.idSekolah)
             .collection('siswa').doc(configC.infoUser['uid'])
             .update({'fotoProfilUrl': newUrl});
         
-        // 5. Perbarui state lokal agar UI langsung berubah
+        // 6. Perbarui state lokal agar UI langsung berubah
         configC.infoUser['fotoProfilUrl'] = newUrl;
         Get.snackbar('Berhasil', 'Foto profil berhasil diperbarui.');
       }
     } catch (e) {
-      Get.snackbar('Gagal', 'Terjadi kesalahan saat mengubah foto.');
+      Get.snackbar('Gagal', 'Terjadi kesalahan saat mengubah foto: ${e.toString()}');
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<File?> _compressImage(File file) async {
+    const int targetSizeInBytes = 100 * 1024; // Target 100 KB
+    final int initialSize = file.lengthSync();
+
+    if (initialSize <= targetSizeInBytes) {
+      print("### Foto profil tidak perlu dikompresi.");
+      return file;
+    }
+
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final String targetPath = '${tempDir.path}/compressed_profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      img.Image? image = img.decodeImage(file.readAsBytesSync());
+      if (image == null) return null;
+
+      // Karena sudah di-crop, kita tidak perlu resize besar-besaran.
+      // Cukup pastikan tidak lebih besar dari 1080px (ukuran HD standar).
+      const int maxDimension = 1080;
+      if (image.width > maxDimension || image.height > maxDimension) {
+        image = img.copyResize(image, width: maxDimension);
+      }
+
+      // Kompresi Kualitas Adaptif
+      int quality = 90;
+      List<int> compressedBytes;
+
+      do {
+        compressedBytes = img.encodeJpg(image, quality: quality);
+        print("### Kompresi Profil dengan kualitas $quality. Ukuran: ${(compressedBytes.length / 1024).toStringAsFixed(2)} KB");
+        
+        if (compressedBytes.length > targetSizeInBytes) {
+          quality -= 10;
+        }
+      } while (compressedBytes.length > targetSizeInBytes && quality > 20);
+
+      File compressedFile = await File(targetPath).writeAsBytes(compressedBytes);
+      print("### Kompresi Profil FINAL selesai. Ukuran: ${(compressedFile.lengthSync() / 1024).toStringAsFixed(2)} KB");
+      
+      return compressedFile;
+
+    } catch (e) {
+      Get.snackbar("Error Kompresi", "Gagal memproses gambar: ${e.toString()}");
+      return null;
     }
   }
 

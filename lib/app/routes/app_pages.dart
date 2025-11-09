@@ -2,6 +2,9 @@ import 'package:get/get.dart';
 
 import '../modules/account_switcher/bindings/account_switcher_binding.dart';
 import '../modules/account_switcher/views/account_switcher_view.dart';
+import '../modules/catatan_bk/bindings/catatan_bk_binding.dart';
+import '../modules/catatan_bk/views/catatan_bk_detail_view.dart';
+import '../modules/catatan_bk/views/catatan_bk_list_view.dart';
 import '../modules/daftar_mata_pelajaran/bindings/daftar_mata_pelajaran_binding.dart';
 import '../modules/daftar_mata_pelajaran/views/daftar_mata_pelajaran_view.dart';
 import '../modules/daftar_nilai_matapelajaran/bindings/daftar_nilai_matapelajaran_binding.dart';
@@ -14,6 +17,8 @@ import '../modules/detail_keuangan_siswa/bindings/detail_keuangan_siswa_binding.
 import '../modules/detail_keuangan_siswa/views/detail_keuangan_siswa_view.dart';
 import '../modules/detail_mapel_siswa/bindings/detail_mapel_siswa_binding.dart';
 import '../modules/detail_mapel_siswa/views/detail_mapel_siswa_view.dart';
+import '../modules/detail_rapor/bindings/detail_rapor_binding.dart';
+import '../modules/detail_rapor/views/detail_rapor_view.dart';
 import '../modules/ekskul_siswa/bindings/ekskul_siswa_binding.dart';
 import '../modules/ekskul_siswa/views/ekskul_siswa_view.dart';
 import '../modules/forgot_password/bindings/forgot_password_binding.dart';
@@ -60,6 +65,8 @@ import '../modules/onboarding/bindings/onboarding_binding.dart';
 import '../modules/onboarding/views/onboarding_view.dart';
 import '../modules/pembelian_buku/bindings/pembelian_buku_binding.dart';
 import '../modules/pembelian_buku/views/pembelian_buku_view.dart';
+import '../modules/riwayat_rapor/bindings/riwayat_rapor_binding.dart';
+import '../modules/riwayat_rapor/views/riwayat_rapor_view.dart';
 import '../modules/root/bindings/root_binding.dart';
 import '../modules/root/views/root_view.dart';
 import '../modules/semua_notifikasi/bindings/semua_notifikasi_binding.dart';
@@ -68,9 +75,6 @@ import '../modules/splash/bindings/splash_binding.dart';
 import '../modules/splash/views/splash_view.dart';
 import '../modules/tampilkan_info_sekolah/bindings/tampilkan_info_sekolah_binding.dart';
 import '../modules/tampilkan_info_sekolah/views/tampilkan_info_sekolah_view.dart';
-import '../modules/catatan_bk/bindings/catatan_bk_binding.dart';
-import '../modules/catatan_bk/views/catatan_bk_detail_view.dart';
-import '../modules/catatan_bk/views/catatan_bk_list_view.dart';
 
 part 'app_routes.dart';
 
@@ -259,6 +263,16 @@ class AppPages {
       name: _Paths.CATATAN_BK_DETAIL,
       page: () => const CatatanBkDetailView(),
       binding: CatatanBkBinding(),
+    ),
+    GetPage(
+      name: _Paths.RIWAYAT_RAPOR,
+      page: () => const RiwayatRaporView(),
+      binding: RiwayatRaporBinding(),
+    ),
+    GetPage(
+      name: _Paths.DETAIL_RAPOR,
+      page: () => const DetailRaporView(),
+      binding: DetailRaporBinding(),
     ),
   ];
 }

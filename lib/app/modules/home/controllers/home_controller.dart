@@ -380,6 +380,10 @@ class HomeController extends GetxController {
     Get.toNamed(Routes.CATATAN_BK_LIST);
   }
 
+  void goToRaporDigital() {
+    Get.toNamed(Routes.RIWAYAT_RAPOR);
+  }
+
   void goToSemuaInformasi() {
     Get.toNamed(Routes.INFO_SEKOLAH_LIST);
   }
@@ -467,5 +471,30 @@ class HomeController extends GetxController {
   // [FIXED]: Method untuk Switch Akun
   void goToAccountSwitcher() {
     Get.toNamed(Routes.ACCOUNT_SWITCHER);
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> streamRaporTerbaru() {
+    final activeStudent = _accountManager.currentActiveStudent.value;
+    final tahunAjaran = configC.tahunAjaranAktif.value;
+
+    if (activeStudent == null || tahunAjaran.isEmpty || tahunAjaran.contains("TIDAK")) {
+      return const Stream.empty();
+    }
+
+    return _firestore
+        .collection('Sekolah').doc(configC.idSekolah)
+        .collection('tahunajaran').doc(tahunAjaran)
+        .collection('kelastahunajaran').doc(activeStudent.kelasId)
+        .collection('rapor')
+        .where('idSiswa', isEqualTo: activeStudent.uid)
+        .where('isShared', isEqualTo: true)
+        .orderBy('tanggalGenerate', descending: true)
+        .limit(1)
+        .snapshots();
+  }
+
+  // [FUNGSI BARU] Navigasi ke halaman riwayat
+  void goToRiwayatRapor() {
+    Get.toNamed(Routes.RIWAYAT_RAPOR);
   }
 }

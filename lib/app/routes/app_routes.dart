@@ -40,6 +40,8 @@ abstract class Routes {
   static const CATATAN_BK = _Paths.CATATAN_BK;
   static const CATATAN_BK_LIST = _Paths.CATATAN_BK_LIST;
   static const CATATAN_BK_DETAIL = _Paths.CATATAN_BK_DETAIL;
+  static const RIWAYAT_RAPOR = _Paths.RIWAYAT_RAPOR;
+  static const DETAIL_RAPOR = _Paths.DETAIL_RAPOR;
 }
 
 abstract class _Paths {
@@ -81,4 +83,6 @@ abstract class _Paths {
   static const CATATAN_BK = '/catatan-bk';
   static const CATATAN_BK_LIST = '/catatan-bk-list';
   static const CATATAN_BK_DETAIL = '/catatan-bk-detail';
+  static const RIWAYAT_RAPOR = '/riwayat-rapor';
+  static const DETAIL_RAPOR = '/detail-rapor';
 }

@@ -60,6 +60,9 @@ class DashboardHomePage extends GetView<HomeController> {
                       const SizedBox(height: 16), // Nilai sebelumnya: 24
                       // ------------------------------------------
 
+                      _RaporTerbaruCard(),
+                      const SizedBox(height: 16),
+
                       _AkademikSection(), // Carousel cerdas
 
                       // --- [PERBAIKAN UI] Kurangi juga jarak di sini ---
@@ -81,6 +84,8 @@ class DashboardHomePage extends GetView<HomeController> {
       ),
     );
   }
+
+  
 
   // Widget ini tetap sama, hanya lokasinya saja yang dipanggil dari AppBar
   Widget _buildNotificationIcon() {
@@ -313,6 +318,7 @@ class _MenuGrid extends GetView<HomeController> {
       {'title': 'AGIIS','image': 'assets/png/pengumuman.png','onTap': () => Get.toNamed(Routes.MANAJEMEN_AGIS)},
       {'title': 'Buku','image': 'assets/png/akademik_1.png','onTap': () => Get.toNamed(Routes.PEMBELIAN_BUKU)},
       {'title': 'Catatan Perkembangan','image': 'assets/png/pengumuman.png','onTap': controller.goToCatatanPerkembangan},
+      {'title': 'Rapor Digital','image': 'assets/png/list_nilai.png','onTap': controller.goToRaporDigital},
     ];
 
     // [MENU BARU KONDISIONAL]
@@ -571,6 +577,39 @@ class _InformasiList extends GetView<HomeController> {
               ),
             );
           },
+        );
+      },
+    );
+  }
+}
+
+class _RaporTerbaruCard extends GetView<HomeController> {
+  const _RaporTerbaruCard({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: controller.streamRaporTerbaru(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          // Jika tidak ada rapor, jangan tampilkan apa-apa
+          return const SizedBox.shrink();
+        }
+        
+        final raporData = snapshot.data!.docs.first.data();
+        final semester = raporData['semester'] ?? '?';
+        final tahun = (raporData['idTahunAjaran'] ?? '').replaceAll('-', '/');
+
+        return Card(
+          elevation: 3,
+          color: Colors.indigo.shade50,
+          child: ListTile(
+            leading: Icon(Icons.receipt_long_rounded, color: Colors.indigo.shade700),
+            title: const Text("Rapor Digital Terbaru Tersedia", style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text("Semester $semester - Thn. Ajaran $tahun"),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: controller.goToRiwayatRapor,
+          ),
         );
       },
     );
