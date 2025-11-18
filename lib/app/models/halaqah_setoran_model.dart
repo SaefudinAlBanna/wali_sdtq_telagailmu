@@ -62,6 +62,19 @@ class HalaqahSetoranModel {
     );
   }
 
+  String get namaPemberiNilai {
+    // Prioritas 1: Jika dinilai oleh pengganti, gunakan nama penilai.
+    if (isDinilaiPengganti && namaPenilai != null && namaPenilai!.isNotEmpty) {
+      return namaPenilai!;
+    }
+    // Prioritas 2: Jika ada alias pengampu, gunakan alias.
+    if (aliasPengampu != null && aliasPengampu!.isNotEmpty) {
+      return aliasPengampu!;
+    }
+    // Prioritas 3: Jika tidak ada keduanya, gunakan nama pengampu lengkap.
+    return namaPengampu;
+  }
+
   // Tambahan helper untuk menghitung total nilai (opsional)
   int getTotalNilai() {
     return (nilai['sabak'] ?? 0) + (nilai['sabqi'] ?? 0) + (nilai['manzil'] ?? 0) + (nilai['tambahan'] ?? 0);

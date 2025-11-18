@@ -61,36 +61,3 @@ class SplashController extends GetxController {
     }
   }
 }
-
-
-// // lib/app/modules/splash/controllers/splash_controller.dart (Aplikasi ORANG TUA)
-
-// import 'package:get/get.dart';
-// import 'package:get_storage/get_storage.dart';
-
-// import '../../../controllers/config_controller.dart';
-// import '../../../routes/app_pages.dart';
-
-// class SplashController extends GetxController {
-//   final ConfigController configC = Get.find<ConfigController>();
-//   final GetStorage _box = GetStorage();
-
-//   @override
-//   void onReady() {
-//     super.onReady();
-//     _initialize();
-//   }
-
-//   Future<void> _initialize() async {
-//     await Future.delayed(const Duration(seconds: 2));
-    
-//     final bool hasSeenOnboarding = _box.read('hasSeenOnboarding') ?? false;
-
-//     if (!hasSeenOnboarding) {
-//       Get.offAllNamed(Routes.ONBOARDING); // Arahkan ke Onboarding jika belum pernah lihat
-//     } else {
-//       final String initialRoute = await configC.decideInitialRoute();
-//       Get.offAllNamed(initialRoute);
-//     }
-//   }
-// }

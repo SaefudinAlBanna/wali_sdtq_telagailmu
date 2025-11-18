@@ -25,7 +25,7 @@ class OnboardingController extends GetxController {
   void _loadParentAppOnboardingItems() {
     onboardingItems = [
       OnboardingItemModel(
-        title: "Selamat Datang, Wali Murid PKBM STQ Telagailmu!",
+        title: "Bismillah, Selamat Datang, Wali Murid PKBM STQ Telagailmu!",
         description: "Pantau Progres Belajar Ananda Lebih Dekat. Dapatkan informasi terkini tentang nilai, kehadiran, dan aktivitas akademik putra/putri Anda.",
         imagePath: "assets/lotties/1.json", // Menggunakan aset Anda
         isLottie: true,
@@ -44,7 +44,7 @@ class OnboardingController extends GetxController {
       ),
       OnboardingItemModel(
         title: "Mewujudkan Generasi Qur'ani Bersama",
-        description: "Kami berkomitmen untuk pendidikan terbaik. Bersama, kita bimbing Ananda mencapai potensi maksimal.",
+        description: "Kami berkomitmen untuk pendidikan terbaik. Bersama, kita bimbing Ananda mencapai potensi maksimal dan menjadi hafidz hafidzah.",
         imagePath: "assets/lotties/4.json", // Menggunakan aset Anda
         isLottie: true,
       ),

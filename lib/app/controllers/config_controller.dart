@@ -95,6 +95,61 @@ class ConfigController extends GetxController {
     }
   }
 
+  // Future<String> decideInitialRoute() async {
+  //   final user = _auth.currentUser;
+  //   if (user == null) {
+  //     return Routes.LOGIN;
+  //   }
+
+  //   try {
+  //     final userDoc = await _firestore.collection('Sekolah').doc(idSekolah).collection('siswa').doc(user.uid).get();
+
+  //     if (userDoc.exists && userDoc.data() != null) {
+  //       await initAuthenticatedData(); 
+
+  //       final profile = userDoc.data()!;
+  //       final Map<String, dynamic> sanitizedProfile = Map<String, dynamic>.from(profile);
+  //       sanitizedProfile.forEach((key, value) {
+  //         if (value is Timestamp) {
+  //           sanitizedProfile[key] = value.toDate().toIso8601String();
+  //         }
+  //       });
+        
+  //       infoUser.value = sanitizedProfile;
+  //       await _box.write('userProfile', sanitizedProfile);
+
+  //       final StudentProfilePreview updatedPreview = StudentProfilePreview(
+  //         uid: user.uid,
+  //         email: user.email!, 
+  //         passwordEncrypted: _accountManager.getAccountByUid(user.uid)?.passwordEncrypted ?? '', 
+  //         namaLengkap: profile['namaLengkap'] ?? 'Siswa',
+  //         kelasId: profile['kelasId'] ?? 'N/A',
+  //         fotoProfilUrl: profile['fotoProfilUrl'],
+  //         peranKomite: profile['peranKomite'] as Map<String, dynamic>?, // <-- TAMBAHKAN BARIS INI
+  //       );
+  //       await _accountManager.addOrUpdateStudentAccount(updatedPreview); 
+
+  //       if (profile['mustChangePassword'] == true) {
+  //         return Routes.NEW_PASSWORD;
+  //       } else if (profile['isProfileComplete'] == false) {
+  //         return Routes.LENGKAPI_PROFIL;
+  //       } else {
+  //         return Routes.HOME;
+  //       }
+  //     } else {
+  //       throw Exception("Profil siswa tidak ditemukan.");
+  //     }
+  //   } catch (e) {
+  //     print("[ConfigController] Error deciding initial route: $e");
+  //     await _box.remove('userProfile');
+  //     await _auth.signOut();
+  //     _accountManager.clearActiveStudent(); 
+  //     Get.snackbar("Error Sesi", "Sesi tidak valid. Silakan login kembali.", backgroundColor: Colors.red, colorText: Colors.white);
+  //     return Routes.LOGIN;
+  //   }
+  // }
+
+
   Future<String> decideInitialRoute() async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -108,27 +163,26 @@ class ConfigController extends GetxController {
         await initAuthenticatedData(); 
 
         final profile = userDoc.data()!;
-        final Map<String, dynamic> sanitizedProfile = Map<String, dynamic>.from(profile);
-        sanitizedProfile.forEach((key, value) {
-          if (value is Timestamp) {
-            sanitizedProfile[key] = value.toDate().toIso8601String();
-          }
-        });
+
+        // [PERBAIKAN KUNCI] Ganti loop forEach yang dangkal dengan pemanggilan fungsi rekursif kita
+        final Map<String, dynamic> sanitizedProfile = _sanitizeMap(profile);
         
         infoUser.value = sanitizedProfile;
         await _box.write('userProfile', sanitizedProfile);
 
+        // Kode di bawah ini sekarang dijamin aman karena 'sanitizedProfile' sudah 100% bersih
         final StudentProfilePreview updatedPreview = StudentProfilePreview(
           uid: user.uid,
           email: user.email!, 
           passwordEncrypted: _accountManager.getAccountByUid(user.uid)?.passwordEncrypted ?? '', 
-          namaLengkap: profile['namaLengkap'] ?? 'Siswa',
-          kelasId: profile['kelasId'] ?? 'N/A',
-          fotoProfilUrl: profile['fotoProfilUrl'],
-          peranKomite: profile['peranKomite'] as Map<String, dynamic>?, // <-- TAMBAHKAN BARIS INI
+          namaLengkap: sanitizedProfile['namaLengkap'] ?? 'Siswa',
+          kelasId: sanitizedProfile['kelasId'] ?? 'N/A',
+          fotoProfilUrl: sanitizedProfile['fotoProfilUrl'],
+          peranKomite: sanitizedProfile['peranKomite'] as Map<String, dynamic>?,
         );
         await _accountManager.addOrUpdateStudentAccount(updatedPreview); 
 
+        // [PENTING] Gunakan 'profile' asli untuk cek flag boolean dari Firestore
         if (profile['mustChangePassword'] == true) {
           return Routes.NEW_PASSWORD;
         } else if (profile['isProfileComplete'] == false) {
@@ -147,6 +201,37 @@ class ConfigController extends GetxController {
       Get.snackbar("Error Sesi", "Sesi tidak valid. Silakan login kembali.", backgroundColor: Colors.red, colorText: Colors.white);
       return Routes.LOGIN;
     }
+  }
+
+  Map<String, dynamic> _sanitizeMap(Map<String, dynamic> map) {
+    // Buat map baru untuk menampung hasil yang sudah bersih
+    final sanitizedMap = <String, dynamic>{};
+
+    // Iterasi melalui setiap key-value di map input
+    map.forEach((key, value) {
+      if (value is Timestamp) {
+        // Jika value adalah Timestamp, konversi ke String
+        sanitizedMap[key] = value.toDate().toIso8601String();
+      } else if (value is Map) {
+        // Jika value adalah Map lain, panggil fungsi ini lagi untuk membersihkannya (rekursif)
+        sanitizedMap[key] = _sanitizeMap(Map<String, dynamic>.from(value));
+      } else if (value is List) {
+        // Jika value adalah List, proses setiap item di dalamnya
+        sanitizedMap[key] = value.map((item) {
+          // Jika item di dalam list adalah Map, bersihkan juga
+          if (item is Map) {
+            return _sanitizeMap(Map<String, dynamic>.from(item));
+          }
+          // Jika bukan Map (atau Timestamp, yang seharusnya tidak ada di sini), biarkan apa adanya
+          return item;
+        }).toList();
+      } else {
+        // Jika bukan Timestamp, Map, atau List, biarkan apa adanya
+        sanitizedMap[key] = value;
+      }
+    });
+
+    return sanitizedMap;
   }
   
   Future<void> clearCache() async {

@@ -114,6 +114,203 @@ class HomeController extends GetxController {
     super.onClose();
   }
 
+  // Future<void> fetchCarouselData() async {
+  //   isCarouselLoading.value = true;
+  //   try {
+  //     final now = DateTime.now();
+  //     final todayWithoutTime = DateTime(now.year, now.month, now.day);
+  //     final String tahunAjaran = configC.tahunAjaranAktif.value;
+  //     final String semester = configC.semesterAktif.value;
+  //     final String namaHari = DateFormat('EEEE', 'id_ID').format(now);
+      
+  //     final String kelasId = _accountManager.currentActiveStudent.value!.kelasId; 
+  //     final String uidSiswa = _accountManager.currentActiveStudent.value!.uid;
+
+  //     final List<CarouselItemModel> tempCarouselItems = [];
+
+  //     // [Prioritas #0: Pesan Pimpinan]
+  //     final pesanPimpinan = configC.konfigurasiDashboard['pesanPimpinan'] as Map<String, dynamic>?;
+  //     if (pesanPimpinan != null) {
+  //       final berlakuHingga = (pesanPimpinan['berlakuHingga'] as Timestamp?)?.toDate();
+  //       if (berlakuHingga != null && now.isBefore(berlakuHingga)) {
+  //         tempCarouselItems.add(CarouselItemModel(namaKelas: "Info Sekolah", tipe: CarouselContentType.Prioritas, judul: "PENGUMUMAN PENTING", isi: pesanPimpinan['pesan'] ?? '', ikon: Icons.campaign_rounded, warna: Colors.red.shade700));
+  //       }
+  //     }
+
+  //     // [Prioritas #1: Kalender Akademik]
+  //     final kalenderSnap = await _firestore.collection('Sekolah').doc(configC.idSekolah).collection('tahunajaran').doc(tahunAjaran).collection('kalender_akademik').where('tanggalMulai', isLessThanOrEqualTo: now).get();
+  //     for (var doc in kalenderSnap.docs) {
+  //       final data = doc.data();
+  //       final tglSelesai = (data['tanggalSelesai'] as Timestamp).toDate();
+  //       if (todayWithoutTime.isBefore(tglSelesai.add(const Duration(days: 1)))) {
+  //         final isLibur = data['isLibur'] as bool? ?? false;
+  //         tempCarouselItems.add(CarouselItemModel(namaKelas: "Info Sekolah", tipe: CarouselContentType.Info, 
+  //         judul: isLibur ? "HARI LIBUR" : "INFO KEGIATAN", isi: data['namaKegiatan'] ?? 'Tanpa Judul', 
+  //         ikon: isLibur ? Icons.weekend_rounded : Icons.event_note_rounded, 
+  //         warna: isLibur ? Colors.red.shade400 : Colors.teal.shade700));
+  //         break;
+  //       }
+  //     }
+      
+  //     // [Prioritas #2: Hari Libur (Sabtu/Minggu)]
+  //     if (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday) {
+  //       final String pesanLiburDariDb = configC.konfigurasiDashboard['pesanDefaultLibur'] as String? ?? "";
+  //       final String pesanLiburFinal = pesanLiburDariDb.isEmpty ? "Selamat beristirahat dan tetap semangat belajar di rumah ya!" : pesanLiburDariDb;
+  //       tempCarouselItems.add(CarouselItemModel(namaKelas: "Info Sekolah", tipe: CarouselContentType.Default, 
+  //       judul: "SELAMAT BERAKHIR PEKAN", isi: pesanLiburFinal, 
+  //       ikon: Icons.beach_access_rounded, warna: Colors.blue.shade700));
+  //     }
+
+  //     // [Prioritas #3: Jadwal KBM Hari Ini (Sedang Berlangsung / Berikutnya)]
+  //     final jadwalDoc = await _firestore.collection('Sekolah').doc(configC.idSekolah).collection('tahunajaran').doc(tahunAjaran).collection('jadwalkelas').doc(kelasId).get();
+  //     if(jadwalDoc.exists) {
+  //       final jadwalData = jadwalDoc.data()!;
+  //       final listSlot = (jadwalData[namaHari] ?? jadwalData[namaHari.toLowerCase()]) as List? ?? [];
+  //       listSlot.sort((a,b) => (a['jam'] as String).compareTo(b['jam'] as String));
+
+  //       final nowTime = DateFormat("HH:mm").parse(DateFormat("HH:mm").format(now));
+  //       Map<String, dynamic>? slotBerlangsung;
+  //       Map<String, dynamic>? slotBerikutnya;
+  //       for (var slot in listSlot) { try { final timeParts = (slot['jam'] as String? ?? "00:00-00:00").split('-'); 
+  //       final startTime = DateFormat("HH:mm").parse(timeParts[0].trim()); 
+  //       final endTime = DateFormat("HH:mm").parse(timeParts[1].trim()); 
+  //       if (nowTime.isAfter(startTime) && nowTime.isBefore(endTime)) { slotBerlangsung = slot; break; } 
+  //       if (nowTime.isBefore(startTime) && slotBerikutnya == null) { slotBerikutnya = slot; } } catch(e) {} } 
+        
+  //       if (slotBerlangsung != null) {
+  //         tempCarouselItems.add(CarouselItemModel(namaKelas: "Kelas ${kelasId.split('-').first}", tipe: CarouselContentType.KBM, 
+  //         judul: "Saat Ini Berlangsung", isi: slotBerlangsung['namaMapel'] ?? 'N/A', 
+  //         subJudul: "Oleh: ${slotBerlangsung['namaGuru'] ?? 'N/A'}", ikon: Icons.school_rounded, warna: Colors.indigo.shade700));
+  //       } else if (slotBerikutnya != null) {
+  //         tempCarouselItems.add(CarouselItemModel(namaKelas: "Kelas ${kelasId.split('-').first}", tipe: CarouselContentType.KBM, 
+  //         judul: "Pelajaran Berikutnya", isi: slotBerikutnya['namaMapel'] ?? 'N/A', 
+  //         subJudul: "Jam: ${slotBerikutnya['jam'] ?? 'N/A'}", ikon: Icons.update_rounded, warna: Colors.blue.shade700));
+  //       } else {
+  //         final String pesanSelesaiDariDb = configC.konfigurasiDashboard['pesanDefaultSetelahKBM'] as String? ?? "";
+  //         final String pesanSelesaiFinal = pesanSelesaiDariDb.isEmpty ? "Aktivitas belajar telah usai, tetap belajar dirumah ya" : pesanSelesaiDariDb;
+
+  //         tempCarouselItems.add(CarouselItemModel(namaKelas: "Info Kelas", tipe: CarouselContentType.Default, 
+  //         judul: "KBM Telah Selesai", isi: pesanSelesaiFinal, 
+  //         ikon: Icons.check_circle_outline_rounded, warna: Colors.blueGrey.shade700));
+
+  //         final tomorrow = now.add(const Duration(days: 1));
+  //         final namaHariBesok = DateFormat('EEEE', 'id_ID').format(tomorrow);
+  //         final listSlotBesok = (jadwalData[namaHariBesok] ?? jadwalData[namaHariBesok.toLowerCase()]) as List? ?? [];
+  //         if (listSlotBesok.isNotEmpty) {
+  //           listSlotBesok.sort((a,b) => (a['jam'] as String).compareTo(b['jam'] as String));
+  //           final firstSlotBesok = listSlotBesok.first;
+  //           tempCarouselItems.add(CarouselItemModel(namaKelas: "Kelas ${kelasId.split('-').first}", tipe: CarouselContentType.Info,
+  //             judul: "Jadwal Besok", isi: firstSlotBesok['namaMapel'] ?? 'N/A',
+  //             subJudul: "Jam: ${firstSlotBesok['jam'] ?? 'N/A'}", ikon: Icons.calendar_today_rounded, warna: Colors.orange.shade700));
+  //         }
+  //       }
+  //     } else {
+  //       tempCarouselItems.add(CarouselItemModel(namaKelas: "Info", tipe: CarouselContentType.Default, judul: "Selamat Belajar!", 
+  //       isi: "Manfaatkan waktu sebaik-baiknya untuk menuntut ilmu.", 
+  //       ikon: Icons.auto_stories, warna: Colors.green.shade800));
+  //     }
+
+  //     // [BARU] Informasi Halaqah Hari Ini
+  //     final halaqahSiswaSnap = await _firestore.collection('Sekolah').doc(configC.idSekolah)
+  //         .collection('siswa').doc(uidSiswa)
+  //         .collection('halaqah_nilai')
+  //         .where('tanggalTugas', isGreaterThanOrEqualTo: Timestamp.fromDate(todayWithoutTime))
+  //         .where('tanggalTugas', isLessThan: Timestamp.fromDate(todayWithoutTime.add(const Duration(days: 1))))
+  //         .orderBy('tanggalTugas', descending: true)
+  //         .limit(1).get();
+      
+  //     if (halaqahSiswaSnap.docs.isNotEmpty) {
+  //       final halaqah = HalaqahSetoranModel.fromFirestore(halaqahSiswaSnap.docs.first);
+  //       String halaqahJudul = "Halaqah Hari Ini";
+  //       String halaqahIsi;
+  //       Color halaqahWarna = Colors.purple.shade700;
+  //       IconData halaqahIkon = Icons.menu_book_rounded;
+
+  //       if (halaqah.status == 'Sudah Dinilai') {
+  //         final int nilaiSabak = halaqah.nilai['sabak'] ?? 0;
+  //         final int nilaiSabqi = halaqah.nilai['sabqi'] ?? 0;
+  //         final int nilaiManzil = halaqah.nilai['manzil'] ?? 0;
+  //         final int totalNilai = nilaiSabak + nilaiSabqi + nilaiManzil;
+  //         halaqahIsi = "Setoran Selesai, Nilai: $totalNilai";
+  //         halaqahWarna = Colors.green.shade700;
+  //       } else if (halaqah.status == 'Tugas Diberikan') {
+  //         halaqahIsi = "Ada tugas setoran (${halaqah.tugas['sabak'] ?? 'N/A'})";
+  //         halaqahWarna = Colors.orange.shade700;
+  //       } else if (halaqah.status == 'Tidak Hadir') {
+  //           halaqahIsi = "Ananda tidak masuk halaqah hari ini.";
+  //           halaqahWarna = Colors.red.shade700;
+  //           halaqahIkon = Icons.person_off_rounded;
+  //       } else {
+  //         halaqahIsi = "Status: ${halaqah.status}";
+  //         halaqahWarna = Colors.blue.shade700;
+  //       }
+        
+  //       tempCarouselItems.add(CarouselItemModel(namaKelas: "Halaqah", tipe: CarouselContentType.Info,
+  //         judul: halaqahJudul, isi: halaqahIsi,
+  //         subJudul: "Pengampu: ${halaqah.aliasPengampu ?? halaqah.namaPengampu}",
+  //         ikon: halaqahIkon, warna: halaqahWarna));
+  //     } else {
+  //       tempCarouselItems.add(CarouselItemModel(namaKelas: "Halaqah", tipe: CarouselContentType.Default,
+  //         judul: "Info Halaqah", isi: "Belum ada tugas setoran hari ini.",
+  //         ikon: Icons.task_alt, warna: Colors.teal.shade700));
+  //     }
+
+
+  //     // [BARU] Rekap Absensi Siswa Harian (diri sendiri)
+  //     final absensiSiswaSnap = await _firestore.collection('Sekolah').doc(configC.idSekolah)
+  //         .collection('tahunajaran').doc(tahunAjaran)
+  //         .collection('kelastahunajaran').doc(kelasId)
+  //         .collection('daftarsiswa').doc(uidSiswa)
+  //         .collection('semester').doc(semester)
+  //         .collection('absensi_siswa').doc(DateFormat('yyyy-MM-dd').format(now)).get();
+      
+  //     if (absensiSiswaSnap.exists) {
+  //       final statusAbsen = absensiSiswaSnap.data()?['status'] ?? 'Belum Tercatat';
+  //       Color absensiColor = Colors.grey;
+  //       String absensiDesc = "Status absensi hari ini: $statusAbsen";
+  //       if (statusAbsen == 'Hadir') absensiColor = Colors.green.shade700;
+  //       else if (statusAbsen == 'Sakit') absensiColor = Colors.orange.shade700;
+  //       else if (statusAbsen == 'Izin') absensiColor = Colors.blue.shade700;
+  //       else if (statusAbsen == 'Alfa') absensiColor = Colors.red.shade700;
+
+  //       tempCarouselItems.add(CarouselItemModel(namaKelas: "Absensi", tipe: CarouselContentType.Info,
+  //         judul: "Kehadiran Hari Ini", isi: absensiDesc,
+  //         ikon: Icons.person_pin_rounded, warna: absensiColor));
+  //     }
+
+  //     // [BARU] Tugas/Ulangan Mendekat (atau yang Diumumkan Hari Ini)
+  //     final tugasUlanganSnap = await _firestore.collection('Sekolah').doc(configC.idSekolah)
+  //         .collection('tahunajaran').doc(tahunAjaran)
+  //         .collection('kelastahunajaran').doc(kelasId)
+  //         .collection('semester').doc(semester)
+  //         .collection('tugas_ulangan')
+  //         .where('tanggal_dibuat', isGreaterThanOrEqualTo: Timestamp.fromDate(todayWithoutTime))
+  //         .orderBy('tanggal_dibuat', descending: true)
+  //         .limit(1).get();
+
+  //     if (tugasUlanganSnap.docs.isNotEmpty) {
+  //       final tugas = tugasUlanganSnap.docs.first.data();
+  //       final kategori = tugas['kategori'] ?? 'Tugas';
+  //       final judulTugas = tugas['judul'] ?? 'Tanpa Judul';
+  //       final deskripsiTugas = tugas['deskripsi'] ?? '';
+        
+  //       tempCarouselItems.add(CarouselItemModel(namaKelas: "Peringatan", tipe: CarouselContentType.Info,
+  //         judul: "$kategori Baru", isi: "$judulTugas: $deskripsiTugas",
+  //         ikon: kategori == 'PR' ? Icons.assignment_rounded : Icons.quiz_rounded, warna: Colors.purple.shade700));
+  //     }
+
+  //     daftarCarousel.assignAll(tempCarouselItems);
+
+  //   } catch (e) {
+  //     print("### Gagal membangun carousel: $e");
+  //     daftarCarousel.assign(CarouselItemModel(namaKelas: "Error", tipe: CarouselContentType.Default, judul: "GAGAL MEMUAT DATA", isi: "Silakan coba lagi.", ikon: Icons.error_outline_rounded, warna: Colors.grey.shade700));
+  //   } finally {
+  //     isCarouselLoading.value = false;
+  //     print("[HomeController] Carousel loading finished. DaftarCarousel size: ${daftarCarousel.length}");
+  //   }
+  // }
+
+
   Future<void> fetchCarouselData() async {
     isCarouselLoading.value = true;
     try {
@@ -227,11 +424,35 @@ class HomeController extends GetxController {
         IconData halaqahIkon = Icons.menu_book_rounded;
 
         if (halaqah.status == 'Sudah Dinilai') {
-          final int nilaiSabak = halaqah.nilai['sabak'] ?? 0;
-          final int nilaiSabqi = halaqah.nilai['sabqi'] ?? 0;
-          final int nilaiManzil = halaqah.nilai['manzil'] ?? 0;
-          final int totalNilai = nilaiSabak + nilaiSabqi + nilaiManzil;
-          halaqahIsi = "Setoran Selesai, Nilai: $totalNilai";
+          // [LOGIKA CERDAS BARU DIMULAI DI SINI]
+          final nilaiSabak = halaqah.nilai['sabak']?.toString() ?? '';
+          final nilaiSabqi = halaqah.nilai['sabqi']?.toString() ?? '';
+          final nilaiManzil = halaqah.nilai['manzil']?.toString() ?? '';
+
+          final sabakAsInt = int.tryParse(nilaiSabak);
+          final sabqiAsInt = int.tryParse(nilaiSabqi);
+          final manzilAsInt = int.tryParse(nilaiManzil);
+
+          // Cek apakah setidaknya salah satu nilai adalah angka yang valid
+          if (sabakAsInt != null || sabqiAsInt != null || manzilAsInt != null) {
+            // Jika ya, kita asumsikan ini penilaian berbasis angka
+            final totalNilai = (sabakAsInt ?? 0) + (sabqiAsInt ?? 0) + (manzilAsInt ?? 0);
+            halaqahIsi = "Setoran Selesai, Total Nilai: $totalNilai";
+          } else {
+            // Jika tidak, ini adalah penilaian berbasis huruf
+            List<String> ringkasanNilai = [];
+            if (nilaiSabak.isNotEmpty) ringkasanNilai.add("Sabak: $nilaiSabak");
+            if (nilaiSabqi.isNotEmpty) ringkasanNilai.add("Sabqi: $nilaiSabqi");
+            if (nilaiManzil.isNotEmpty) ringkasanNilai.add("Manzil: $nilaiManzil");
+
+            if (ringkasanNilai.isNotEmpty) {
+              halaqahIsi = "Penilaian: ${ringkasanNilai.join(', ')}";
+            } else {
+              halaqahIsi = "Setoran Selesai (tanpa nilai)";
+            }
+          }
+          // [LOGIKA CERDAS SELESAI]
+          
           halaqahWarna = Colors.green.shade700;
         } else if (halaqah.status == 'Tugas Diberikan') {
           halaqahIsi = "Ada tugas setoran (${halaqah.tugas['sabak'] ?? 'N/A'})";
@@ -245,14 +466,18 @@ class HomeController extends GetxController {
           halaqahWarna = Colors.blue.shade700;
         }
         
-        tempCarouselItems.add(CarouselItemModel(namaKelas: "Halaqah", tipe: CarouselContentType.Info,
+        tempCarouselItems.add(CarouselItemModel(
+          namaKelas: "Halaqah", tipe: CarouselContentType.Info,
           judul: halaqahJudul, isi: halaqahIsi,
           subJudul: "Pengampu: ${halaqah.aliasPengampu ?? halaqah.namaPengampu}",
-          ikon: halaqahIkon, warna: halaqahWarna));
+          ikon: halaqahIkon, warna: halaqahWarna
+        ));
       } else {
-        tempCarouselItems.add(CarouselItemModel(namaKelas: "Halaqah", tipe: CarouselContentType.Default,
+        tempCarouselItems.add(CarouselItemModel(
+          namaKelas: "Halaqah", tipe: CarouselContentType.Default,
           judul: "Info Halaqah", isi: "Belum ada tugas setoran hari ini.",
-          ikon: Icons.task_alt, warna: Colors.teal.shade700));
+          ikon: Icons.task_alt, warna: Colors.teal.shade700
+        ));
       }
 
 

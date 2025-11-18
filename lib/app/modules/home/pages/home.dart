@@ -193,15 +193,15 @@ class _FuturisticHeaderCard extends GetView<HomeController> {
                         ),
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 4),
               Text(
                 (userData['namaPanggilan'] as String?)?.toUpperCase() ??  'NAMA SISWA',
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white, shadows: [Shadow(blurRadius: 5, color: Colors.black54)]),
               ),
               const SizedBox(height: 4),
               Text(
-                "Kelas: ${userData['kelasId'] ?? '...'}",
-                style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.9)),
+                "Kelas: ${userData['kelasId'].split('-').first ?? '...'}",
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white.withOpacity(0.9)),
               ),
 
               // [WIDGET BARU DITAMBAHKAN DI SINI]
